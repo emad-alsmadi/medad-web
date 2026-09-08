@@ -1,8 +1,9 @@
 /**
- * Shared auth/session types. Roles are intentionally left as a
- * placeholder union — adjust to the real backend roles when known.
+ * Shared auth/session types, matching the real backend contract: only
+ * ADMIN/USER roles, and the user profile is only ever available from the
+ * /auth/login (or /auth/register) response — there is no /auth/me.
  */
-export type UserRole = 'admin' | 'staff' | 'secretary' | 'public';
+export type UserRole = 'ADMIN' | 'USER';
 
 export interface AuthUser {
   id: string;
@@ -13,6 +14,6 @@ export interface AuthUser {
 
 export interface Session {
   user: AuthUser;
-  accessToken: string;
-  expiresAt: number;
+  token: string;
+  refreshToken: string;
 }

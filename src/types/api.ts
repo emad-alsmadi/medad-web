@@ -1,17 +1,38 @@
 /**
- * Standardized paginated response shape. Every list endpoint's lib
- * function should resolve to this so hooks/components share one
- * pagination contract instead of reinventing it per feature.
+ * Spring `Page<T>` shape returned by every paginated backend endpoint.
+ * Only the fields the UI actually needs are typed strictly; `sort`/
+ * `pageable` are kept loose since nothing renders them directly.
  */
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  total: number;
+export interface Page<T> {
+  content: T[];
+  totalElements: number;
   totalPages: number;
+  number: number;
+  size: number;
+  numberOfElements: number;
+  first: boolean;
+  last: boolean;
+  empty: boolean;
+  sort: unknown;
+  pageable: unknown;
 }
 
-export interface PaginationParams {
+export interface PageParams {
   page?: number;
-  pageSize?: number;
+  size?: number;
+  sort?: string | string[];
+}
+
+/**
+ * JSON body shape of every backend error response except a missing
+ * Authorization header (which returns an empty 403 body). Carried in
+ * `ApiError.details` (see lib/api/client.ts) when parseable.
+ */
+export interface ApiErrorBody {
+  status: number;
+  error: string;
+  message: string;
+  path: string;
+  timestamp: string;
+  fieldErrors?: Record<string, string>;
 }

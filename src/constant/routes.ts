@@ -6,8 +6,16 @@ export const ROUTES = {
   home: '/',
   login: '/login',
   admin: {
-    dashboard: '/admin',
     users: '/admin/users',
-    settings: '/admin/settings',
+  },
+  reportTypes: {
+    list: '/report-types',
+    tree: '/report-types/tree',
+  },
+  reports: {
+    list: '/reports',
+    create: '/reports/new',
+    detail: (id: number | string) => `/reports/${id}`,
+    edit: (id: number | string) => `/reports/${id}/edit`,
   },
 } as const;

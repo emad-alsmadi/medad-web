@@ -5,7 +5,7 @@ export function Skeleton({ className, ...props }: HTMLAttributes<HTMLDivElement>
   return (
     <div
       role="status"
-      aria-label="Loading"
+      aria-label="جاري التحميل"
       className={cn('animate-pulse rounded-md bg-muted', className)}
       {...props}
     />

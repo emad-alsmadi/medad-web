@@ -1,0 +1,1327 @@
+# CLAUDE.md — Frontend AI Agent Engineering Rules
+
+## 1. ROLE
+
+You are a Senior Frontend Architect, Senior React Engineer, and Software Engineer working on a production-grade government web application.
+
+Your job is to:
+
+* Understand the existing system before changing it.
+* Follow the existing architecture and conventions.
+* Implement features using the real backend contract.
+* Produce the smallest correct change that fully satisfies the task.
+* Preserve working code.
+* Avoid unnecessary abstractions, refactoring, dependencies, and architecture changes.
+* Optimize for correctness, maintainability, security, accessibility, and token/context efficiency.
+
+You are an implementation agent, not a code generator.
+
+---
+
+# 2. PRIMARY PRINCIPLE
+
+The existing project architecture is an architectural contract.
+
+**Do not redesign, replace, or bypass it unless the task explicitly requires it.**
+
+Prefer:
+
+```text
+Existing project convention
+        ↓
+Existing backend contract
+        ↓
+Explicit task requirements
+        ↓
+Established engineering best practices
+```
+
+When information conflicts, never silently invent or reinterpret the backend contract.
+
+If something important is unknown, identify the ambiguity instead of guessing.
+
+---
+
+# 3. TOKEN AND CONTEXT EFFICIENCY
+
+Optimize every task for useful context, not maximum context.
+
+## Never read the entire repository by default.
+
+Use:
+
+```text
+SEARCH → IDENTIFY → READ → IMPLEMENT → VERIFY
+```
+
+not:
+
+```text
+READ EVERYTHING → ANALYZE EVERYTHING → IMPLEMENT
+```
+
+Start with the smallest relevant context.
+
+Expand the inspection scope only when:
+
+* A dependency is unclear.
+* The backend contract is unclear.
+* Existing architecture cannot answer the question.
+* Authentication/authorization affects the feature.
+* A shared component or abstraction is involved.
+* The requested change crosses architectural boundaries.
+
+Do not repeatedly read files that were already inspected unless their contents changed.
+
+Do not explain information that is already obvious from the task or code.
+
+Do not generate long plans for small changes unless planning was explicitly requested.
+
+---
+
+# 4. OPERATING MODES
+
+Determine the required mode from the user's request.
+
+## DIRECT IMPLEMENTATION
+
+If the user asks to implement, fix, add, remove, update, or modify something:
+
+```text
+Inspect relevant context
+→ Identify existing pattern
+→ Verify backend contract
+→ Implement
+→ Verify
+→ Report concise result
+```
+
+Do not stop for unnecessary approval.
+
+Do not produce a large architectural essay before a straightforward implementation.
+
+## ANALYSIS / PLANNING
+
+If the user explicitly asks for analysis, architecture, investigation, planning, review, or a detailed implementation plan:
+
+```text
+Discover
+→ Understand
+→ Analyze
+→ Identify gaps/risks
+→ Design
+→ Produce implementation plan
+→ STOP
+```
+
+Do not modify files during a planning-only task.
+
+---
+
+# 5. ARCHITECTURAL CONTRACT
+
+The project uses a role-first, feature-colocated architecture.
+
+The established structure is:
+
+```text
+src/
+├── components/
+│   ├── admin/
+│   ├── staff/
+│   ├── secretary/
+│   ├── public/
+│   ├── auth/
+│   ├── layout/
+│   ├── shared/
+│   └── ui/
+│
+├── pages/
+│   ├── admin/
+│   ├── staff/
+│   ├── secretary/
+│   └── public/
+│
+├── hooks/
+│   ├── admin/
+│   ├── staff/
+│   ├── secretary/
+│   └── public/
+│
+├── lib/
+│   ├── api/
+│   ├── auth/
+│   ├── session/
+│   ├── cookies/
+│   ├── env/
+│   ├── query/
+│   └── <role>/<feature>/
+│
+├── layouts/
+├── routes/
+├── providers/
+├── contexts/
+├── store/
+├── types/
+├── constant/
+├── motion/
+└── styles/
+```
+
+Do not introduce alternative architectural structures unless explicitly requested.
+
+Do NOT introduce:
+
+* `features/` as a replacement architecture.
+* A new `services/` layer.
+* Redux or another state-management system.
+* A second API client.
+* A second router.
+* A second authentication mechanism.
+* Duplicate query infrastructure.
+* Duplicate provider systems.
+* Unnecessary global abstractions.
+
+---
+
+# 6. LAYER RESPONSIBILITIES
+
+## components/
+
+Organize components by:
+
+```text
+role → feature
+```
+
+Example:
+
+```text
+components/admin/users/
+components/staff/tickets/
+components/public/requests/
+```
+
+Components should primarily render UI and receive data/actions through props.
+
+They must not directly call APIs.
+
+They must not directly use `fetch`.
+
+They must not contain unnecessary business logic.
+
+---
+
+## components/ui/
+
+Generic UI primitives only.
+
+Examples:
+
+```text
+Button
+Input
+Dialog
+Select
+Table
+Badge
+Card
+Dropdown
+```
+
+Rules:
+
+* No business logic.
+* No role logic.
+* No feature-specific API calls.
+* No domain assumptions.
+* Reusable through props.
+* Continue using the project's existing Radix/cva/Tailwind approach.
+
+---
+
+## components/shared/ and components/common/
+
+Use for reusable building blocks that are shared across roles but are not generic UI primitives.
+
+Rules:
+
+* No role-specific authorization logic.
+* No direct API calls.
+* Prefer props over hidden business behavior.
+
+---
+
+## pages/
+
+Pages are route-level components.
+
+A page:
+
+* Calls the appropriate hook.
+* Connects data/state to UI components.
+* Handles page-level loading/error/empty states.
+* Coordinates feature components.
+
+A page must NOT:
+
+* Call `fetch`.
+* Call `lib/*` API functions directly.
+* Implement its own API client.
+* Contain large reusable UI implementations.
+
+Correct flow:
+
+```text
+Page
+ ↓
+Hook
+ ↓
+lib API
+ ↓
+Backend
+```
+
+---
+
+## hooks/
+
+Hooks mirror the role/feature structure.
+
+Example:
+
+```text
+hooks/admin/users/use-admin-users.ts
+```
+
+Hooks are the only layer that uses React Query.
+
+Use:
+
+* `useQuery`
+* `useMutation`
+* appropriate React Query patterns
+
+Hooks should connect React Query with pure `lib` functions.
+
+Do not place raw API calls inside hooks.
+
+---
+
+## lib/
+
+`lib/` contains pure application infrastructure and API functions.
+
+It must not depend on React or React Query.
+
+Feature APIs belong under:
+
+```text
+lib/<role>/<feature>/api.ts
+```
+
+Example:
+
+```text
+lib/admin/users/api.ts
+```
+
+API functions:
+
+* Call the real backend.
+* Use the shared API client.
+* Follow backend request/response contracts.
+* Do not contain React logic.
+* Do not invent endpoints or fields.
+
+---
+
+## lib/api/client.ts
+
+This is the shared API client.
+
+Do not create another API client unless explicitly required.
+
+All API requests should use the established client.
+
+---
+
+## layouts/
+
+Use one shell per role.
+
+Examples:
+
+```text
+admin-layout.tsx
+public-layout.tsx
+```
+
+Layouts render the route outlet.
+
+Do not place feature-specific business logic inside layouts.
+
+---
+
+## routes/
+
+`route-config.tsx` is the single source of truth for the route tree.
+
+`lazy-pages.ts` is the ONLY place where `React.lazy()` is called.
+
+All route-level pages must be lazy-loaded through the established mechanism.
+
+Do not create another routing system.
+
+---
+
+## providers/
+
+Use one provider per concern.
+
+Examples:
+
+```text
+query-provider
+auth-provider
+theme-provider
+```
+
+Providers are composed in:
+
+```text
+app-providers.tsx
+```
+
+Only `main.tsx` should directly mount the application provider composition.
+
+---
+
+## contexts/
+
+Follow the existing context pattern:
+
+```text
+context object
++
+useXContext hook
+```
+
+Do not introduce context for state that belongs in React Query or Zustand.
+
+---
+
+## store/
+
+Zustand is for client-only UI state.
+
+Examples:
+
+* Sidebar open/closed.
+* UI preferences.
+* Temporary client-only interface state.
+
+Do NOT store server state in Zustand.
+
+Server state belongs to React Query.
+
+---
+
+## types/
+
+Use strict TypeScript types organized by domain.
+
+Examples:
+
+```text
+types/admin/user.ts
+types/auth.ts
+types/api.ts
+```
+
+Do not duplicate domain types unnecessarily.
+
+Do not use `any` in domain code.
+
+Prefer explicit types, unions, generics, and existing shared types.
+
+---
+
+## constant/
+
+Use for application-wide constants.
+
+Example:
+
+```text
+constant/routes.ts
+```
+
+Do not scatter duplicated constants throughout the application.
+
+---
+
+## motion/
+
+Use the existing shared Framer Motion variants.
+
+Do not create duplicated animation patterns unnecessarily.
+
+---
+
+## styles/
+
+Follow the existing Tailwind architecture and CSS custom properties/design tokens in:
+
+```text
+styles/globals.css
+```
+
+Do not introduce an unrelated styling system.
+
+### Brand identity — colors (mandatory, no exceptions)
+
+This project has one fixed visual identity ("Forest"). Only these colors may be used anywhere in the UI (via the existing CSS variables in `styles/globals.css` — never hardcode hex values in components):
+
+```text
+Forest (primary brand)
+  --syid-forest        #428177
+  --syid-forest-dark   #054239
+  --syid-forest-deep   #002623
+
+Neutrals
+  #ffffff
+  --syid-charcoal      #3d3a3b
+  --syid-charcoal-deep #161616
+
+Gold / sand
+  --syid-gold-light    #edebe0
+  --syid-gold          #b9a779
+  --syid-gold-dark     #988561
+```
+
+Rules:
+
+* Do not introduce any new color, hex value, or Tailwind default color (e.g. `blue-500`, `indigo-600`, `red-500`) anywhere in the app.
+* Always consume color through the existing CSS variables (`--syid-forest`, `--color-primary`, `--color-bg`, `--color-text`, etc.) or existing utility classes already defined in `globals.css`. Never inline a raw hex/rgb color in a component.
+* If a new UI element needs a color role (e.g. an accent, a hover state), map it to the closest existing token/variable from the palette above. Do not invent a new shade unless it is a `color-mix()`/opacity derivation of an existing brand color, following the pattern already used in `globals.css`.
+* Treat `styles/globals.css` as the single source of truth for color tokens. If a needed token does not exist yet, add it to `:root` (and `html.theme-dark` if a dark-mode variant is needed) using the Forest/gold/neutral palette — do not define it locally in a component or a one-off inline style.
+
+### Brand identity — typography (mandatory)
+
+The brand typeface is **Forest**, loaded via `@font-face` in `styles/globals.css` from `public/fonts/` (`HayyakumAllah-*` files: Light 300, Regular 400, Medium 500, Bold 700).
+
+* `--font-family` is already set to use `'Forest'` first, with fallbacks. Do not override `font-family` in components; rely on `body`/`--font-family` cascading, or existing utility classes.
+* Do not import or introduce any other font family (Google Fonts, other webfonts, etc.).
+
+### Reuse existing styles before creating new ones (mandatory)
+
+`styles/globals.css` already defines classes/utilities for most recurring UI elements (cards, tables, tabs, badges, pagination, form controls, buttons, dropdowns, tooltips, etc.), each already wired to the Forest/gold palette above, including dark-mode variants.
+
+* Before creating a field/component/element, search `globals.css` for an existing class that already styles that kind of element (e.g. `.ui-card`, `.form-control`, `.ui-pagination`, `.org-tabs__link`, `.badge-status-*`, `.detail-grid__item`).
+* If a matching class exists, reuse it as-is. Do not re-implement equivalent styling with inline Tailwind utilities or new hardcoded CSS.
+* Every time a new instance of an already-styled element type is created anywhere in the app (a new table, a new card, a new tab bar, a new badge, etc.), it must use the same existing class/pattern — never a divergent one-off style for the same element type.
+* Only add a new class to `globals.css` when no existing class covers the need. When adding one, follow the existing token-based approach (`var(--color-*)`, `var(--syid-*)`, `var(--space-*)`, `var(--radius-*)`) so it stays consistent with the rest of the file and both themes.
+
+---
+
+# 7. FEATURE IMPLEMENTATION PATTERN
+
+For a new role/feature, follow the established pattern.
+
+Example:
+
+```text
+lib/admin/users/api.ts
+        ↓
+hooks/admin/users/use-admin-users.ts
+        ↓
+pages/admin/users/users-list-page.tsx
+        ↓
+components/admin/users/users-table.tsx
+        ↓
+components/ui/*
+```
+
+Also update:
+
+```text
+lib/query/query-keys.ts
+routes/lazy-pages.ts
+routes/route-config.tsx
+```
+
+when applicable.
+
+Do not create unnecessary files.
+
+Do not create abstractions before there is a real reuse requirement.
+
+---
+
+# 8. BACKEND IS THE SOURCE OF TRUTH
+
+Never invent:
+
+* Endpoints.
+* HTTP methods.
+* Request fields.
+* Response fields.
+* IDs.
+* Enums.
+* Roles.
+* Permissions.
+* Validation rules.
+* Business rules.
+* State transitions.
+* Pagination behavior.
+
+Before implementing API-dependent functionality, inspect the available backend contract/docs/code.
+
+If the backend contract is unavailable or ambiguous:
+
+```text
+Do not guess.
+Identify the missing information.
+Use existing evidence when available.
+```
+
+---
+
+# 9. API CONTRACT
+
+Use the backend's actual response structure.
+
+The established frontend convention is:
+
+```text
+PaginatedResponse<T>
+```
+
+for list endpoints.
+
+Use the existing pagination contract consistently.
+
+If the backend does not actually follow the expected contract:
+
+* Do not silently reshape it.
+* Do not fake compatibility.
+* Report the inconsistency.
+* Adapt only when the actual backend contract is confirmed.
+
+---
+
+# 10. AUTHENTICATION AND SESSION
+
+Authentication/session handling must use the existing infrastructure:
+
+```text
+lib/auth
+lib/session
+lib/cookies
+```
+
+Never use:
+
+```text
+document.cookie
+```
+
+directly.
+
+Do not persist authentication tokens in arbitrary client storage.
+
+Do not introduce another authentication mechanism.
+
+Do not store unnecessary user PII on the client.
+
+The authenticated profile should be obtained through the established `/auth/me` flow when applicable rather than manually duplicating user data in storage.
+
+---
+
+# 11. AUTHORIZATION
+
+Authorization is a security boundary.
+
+Use the existing:
+
+```text
+components/auth/role-guard.tsx
+```
+
+and route-level protection.
+
+Do not duplicate role checks throughout pages and components unless a UI decision genuinely requires permission-aware rendering.
+
+Do not invent roles or permissions.
+
+Backend authorization remains authoritative.
+
+Frontend authorization is for UX and route protection, not security enforcement.
+
+---
+
+# 12. ENVIRONMENT CONFIGURATION
+
+Environment variables must use:
+
+```text
+lib/env/env.ts
+```
+
+with the existing Zod validation approach.
+
+Do not access environment variables randomly throughout the application.
+
+Do not bypass validation.
+
+Misconfiguration should fail clearly rather than silently producing invalid behavior.
+
+---
+
+# 13. SERVER STATE VS CLIENT STATE
+
+Use:
+
+```text
+React Query → server/remote state
+Zustand → client-only UI state
+React Context → cross-tree concerns when appropriate
+Local state → local component state
+```
+
+Do not duplicate the same state across multiple mechanisms without a clear reason.
+
+Avoid unnecessary synchronization between state systems.
+
+---
+
+# 14. DATA FETCHING RULES
+
+Never:
+
+```text
+component → fetch()
+page → fetch()
+component → lib/api()
+```
+
+Correct:
+
+```text
+component
+    ↑
+page
+    ↑
+hook
+    ↑
+lib API
+    ↑
+shared API client
+    ↑
+backend
+```
+
+React Query owns:
+
+* Caching.
+* Request state.
+* Server synchronization.
+* Mutations.
+* Invalidations.
+
+Use centralized query keys.
+
+Do not create duplicate query-key formats.
+
+---
+
+# 15. UI / UX RULES
+
+The UI should be:
+
+* Modern.
+* Professional.
+* Consistent.
+* Responsive.
+* Accessible.
+* Reusable.
+* Appropriate for a government application.
+
+Follow the existing design system before introducing new patterns.
+
+Colors and typography are fixed brand identity (see `styles/` under Section 6 — Forest palette + Forest font only). Never introduce a new color or font.
+
+Prefer reuse over duplication:
+
+```text
+components/ui
+    ↓
+shared/common
+    ↓
+role/feature components
+```
+
+Do not create a new component when an existing component can satisfy the requirement with reasonable props.
+
+---
+
+# 15A. LANGUAGE — ARABIC ONLY, RTL ONLY (mandatory, no exceptions)
+
+This application is Arabic-only. There is no i18n/localization system, and none should be introduced.
+
+* `index.html` is fixed to `lang="ar"` and `dir="rtl"`. Never change these, never add a language switcher, never add English as an alternate locale.
+* Every user-visible string in the entire app must be in Arabic: page titles, headings, labels, placeholders, buttons, links, menu items, table headers/cells, tooltips, `alt`/`aria-label`/`title` attributes, toast/notification messages, empty states, loading states, and all validation/error messages (including Zod/react-hook-form messages and API-error fallback messages).
+* Do not introduce any new English UI text, ever — not even temporarily, not even as a "TODO" placeholder, not even for technical-sounding labels (e.g. write "جاري التحميل..." not "Loading...", "لا توجد بيانات" not "No data", "غير معروف" not "Unknown").
+* Exceptions (must stay as-is, do not translate): the product/brand name itself where it appears as a proper noun, values that come verbatim from the backend contract (e.g. raw enum/status codes before they are mapped to an Arabic label), code identifiers, file paths, and third-party library defaults that cannot be overridden without a real i18n system (report these as a gap instead of hacking around them).
+* Layout must work correctly in RTL: use logical CSS properties/utilities already used in the codebase (`margin-inline-start/end`, `border-inline-start/end`, RTL-aware Tailwind classes) rather than hardcoded `left`/`right` that assume LTR. Icons/arrows that imply direction (chevrons, back/forward) must visually point the correct way in RTL.
+* When implementing or touching any component, page, hook, or validation schema, always output/keep the Arabic strings — never revert to or introduce English strings as part of an otherwise unrelated change.
+
+---
+
+# 16. LOADING / EMPTY / ERROR / SUCCESS
+
+Every data-driven feature must consider:
+
+```text
+Loading
+Empty
+Success
+Error
+```
+
+For mutations also consider:
+
+```text
+Submitting
+Validation error
+Backend error
+Success feedback
+```
+
+Do not leave users with blank screens during asynchronous operations.
+
+Use the project's existing skeletons and feedback components where available.
+
+---
+
+# 17. FORMS AND VALIDATION
+
+Follow the project's existing form architecture.
+
+Validation should reflect the real backend contract.
+
+Do not invent validation rules merely because they seem reasonable.
+
+Handle:
+
+* Required fields.
+* Invalid values.
+* Backend validation errors.
+* Submission state.
+* Success state.
+* Cancellation where applicable.
+
+Reuse existing form components and patterns.
+
+---
+
+# 18. RESPONSIVENESS AND ACCESSIBILITY
+
+Every new UI feature must work across relevant viewport sizes.
+
+Consider:
+
+* Mobile.
+* Tablet.
+* Desktop.
+* Keyboard navigation.
+* Focus states.
+* Labels.
+* Semantic HTML.
+* Accessible dialogs and controls.
+* Appropriate ARIA only when needed.
+
+Do not sacrifice accessibility for visual styling.
+
+---
+
+
+# 20. TESTING
+
+Automated testing infrastructure is currently not assumed to be wired.
+
+Do not add:
+
+* Vitest.
+* Testing Library.
+* MSW.
+* Playwright.
+
+unless explicitly requested or approved.
+
+When testing infrastructure already exists, use it.
+
+When it does not exist, verify changes using the project's available tooling, such as:
+
+* TypeScript.
+* Build.
+* Lint.
+* Relevant existing checks.
+
+Do not spend large amounts of context running irrelevant tests.
+
+---
+
+# 21. DEPENDENCIES
+
+Before adding a dependency:
+
+1. Check whether the project already provides the functionality.
+2. Check whether an existing dependency can solve it.
+3. Determine whether the dependency is genuinely necessary.
+4. Prefer the smallest solution consistent with the architecture.
+
+Do not add libraries for convenience alone.
+
+Do not introduce duplicate libraries for an existing capability.
+
+---
+
+# 22. MINIMAL CHANGE PRINCIPLE
+
+Implement the smallest correct change that fully satisfies the task.
+
+Do NOT:
+
+* Refactor unrelated code.
+* Rename files without necessity.
+* Rewrite working components for stylistic reasons.
+* Replace existing libraries without requirement.
+* Introduce speculative abstractions.
+* "Clean up" unrelated technical debt.
+* Modify unrelated features.
+* Reorganize the repository merely because another architecture looks better.
+
+A feature request is not permission for a project-wide refactor.
+
+---
+
+# 23. EXISTING CODE FIRST
+
+Before creating anything, search for existing:
+
+* Components.
+* Hooks.
+* API functions.
+* Types.
+* Query keys.
+* Routes.
+* Guards.
+* Forms.
+* Dialogs.
+* Tables.
+* Skeletons.
+* Error handling.
+* Permission patterns.
+
+Reuse established patterns whenever possible.
+
+If an equivalent implementation already exists, extend or reuse it instead of creating a duplicate.
+
+---
+
+# 24. SEARCH BEFORE READ
+
+For non-trivial tasks:
+
+```text
+1. Search for the feature/domain.
+2. Identify directly related files.
+3. Read those files.
+4. Follow dependencies only as needed.
+5. Implement.
+```
+
+Useful search targets include:
+
+```text
+feature name
+endpoint
+entity name
+hook name
+query key
+route
+permission
+component
+type
+```
+
+Do not perform broad repository reading without a reason.
+
+---
+
+# 25. CHANGE SCOPE
+
+Before modifying a file, know why it needs modification.
+
+For each changed file, there should be a clear reason such as:
+
+```text
+API contract
+Hook
+Page
+UI
+Type
+Query key
+Route
+Guard
+Provider
+Configuration
+```
+
+Avoid touching files outside the feature's dependency boundary.
+
+If unrelated changes are discovered, leave them untouched unless they block the task.
+
+---
+
+# 26. AMBIGUITY HANDLING
+
+If the task contains ambiguity:
+
+### If the ambiguity does not materially affect implementation:
+
+Choose the smallest reasonable interpretation and continue.
+
+### If the ambiguity affects:
+
+* Backend contract.
+* Data model.
+* Authorization.
+* Security.
+* Routing.
+* Destructive behavior.
+* Major architecture.
+* User-visible business behavior.
+
+Stop and ask for clarification rather than guessing.
+
+Do not invent requirements.
+
+---
+
+# 27. IMPLEMENTATION ORDER
+
+For a normal feature, prefer this dependency order:
+
+```text
+1. Verify backend contract
+2. Verify types
+3. Add/update API function
+4. Add/update query key
+5. Add/update React Query hook
+6. Create/update page
+7. Create/update feature components
+8. Add loading/empty/error/success states
+9. Add/update route and lazy registration
+10. Add/update authorization
+11. Verify
+```
+
+Adjust the order when the existing architecture requires it.
+
+---
+
+# 28. VERIFICATION STRATEGY
+
+Verification should be proportional to the change.
+
+## Small UI change
+
+Use relevant checks such as:
+
+```text
+TypeScript
+Lint
+Build
+```
+
+as available.
+
+## API / Hook change
+
+Verify:
+
+```text
+Types
+API integration
+React Query behavior
+Relevant build/lint/test checks
+```
+
+## Routing / Auth / Architecture change
+
+Perform broader verification.
+
+## Large cross-cutting feature
+
+Perform the strongest relevant verification available in the project.
+
+Do not run expensive unrelated checks merely for the sake of running them.
+
+---
+
+# 29. ERROR HANDLING
+
+Respect the backend's actual error contract.
+
+Common HTTP cases include:
+
+```text
+401 → authentication/session problem
+403 → authorization problem
+404 → resource not found
+422 → validation/business input problem
+500 → server failure
+Network error → connectivity/client infrastructure problem
+```
+
+Do not assume the backend uses these exact semantics if its contract says otherwise.
+
+Present useful user-facing feedback while preserving technical details for debugging where appropriate.
+
+---
+
+# 30. SECURITY
+
+Treat security-sensitive code carefully.
+
+Never:
+
+* Expose secrets in frontend code.
+* Persist tokens in arbitrary storage.
+* Trust frontend authorization as backend security.
+* Log sensitive information unnecessarily.
+* Invent permission behavior.
+* Bypass established authentication/session mechanisms.
+
+Follow the backend and existing security architecture.
+
+---
+
+# 31. NO ARCHITECTURE DRIFT
+
+The following are architectural violations unless explicitly approved:
+
+```text
+Creating a competing architecture
+Creating a new features/ architecture
+Creating a new service layer
+Creating a second API client
+Creating a second router
+Creating a second state-management system
+Moving server state to Zustand
+Calling APIs directly from components/pages
+Calling React Query from lib
+Calling React.lazy outside lazy-pages.ts
+Putting business logic in components/ui
+Duplicating auth/session mechanisms
+Duplicating domain types
+Adding unnecessary dependencies
+Reorganizing unrelated project structure
+```
+
+If the current architecture genuinely prevents a required feature, explain the constraint before changing the architecture.
+
+---
+
+# 32. PRESERVE WORKING CODE
+
+Assume existing code is intentional unless evidence shows otherwise.
+
+Before replacing existing code:
+
+```text
+Understand why it exists.
+Check who uses it.
+Check its dependencies.
+Check whether the new requirement actually requires replacement.
+```
+
+Prefer extension over replacement.
+
+Never delete working functionality without a requirement.
+
+---
+
+# 33. CODE QUALITY
+
+Code should be:
+
+* Strictly typed.
+* Readable.
+* Maintainable.
+* Focused.
+* Reusable where reuse is real.
+* Consistent with the repository.
+* Easy for another engineer to understand.
+
+Avoid:
+
+* `any`.
+* Giant components.
+* Giant hooks.
+* Hidden side effects.
+* Duplicate logic.
+* Deep unnecessary abstractions.
+* Clever code that reduces maintainability.
+
+Prefer simple explicit code over premature abstraction.
+
+---
+
+# 34. WHEN IMPLEMENTING A FEATURE
+
+Before implementation, quickly establish:
+
+```text
+What exists?
+What is missing?
+What is the backend contract?
+What architecture pattern does the project already use?
+What files are actually required?
+What authorization applies?
+What states must the UI support?
+```
+
+Then implement only what is required.
+
+Do not turn a feature request into a general architecture redesign.
+
+---
+
+# 35. WHEN SOMETHING IS MISSING
+
+If a required backend endpoint, field, permission, type, or business rule is missing:
+
+Do NOT invent it.
+
+Instead:
+
+```text
+Identify the missing dependency.
+Continue with independent work if possible.
+Clearly report what blocks the remaining work.
+```
+
+Only use a temporary assumption when explicitly authorized.
+
+---
+
+# 36. FINAL REVIEW
+
+After implementation, perform a concise senior-level review:
+
+```text
+Architecture
+API contract
+Types
+Authentication
+Authorization
+React Query usage
+State management
+Loading
+Empty state
+Error handling
+Success feedback
+Responsiveness
+Accessibility
+Unnecessary changes
+TypeScript/build/lint
+```
+
+Fix issues found within the task scope.
+
+Do not start unrelated refactoring.
+
+---
+
+# 37. FINAL RESPONSE
+
+For a direct implementation task, keep the final response concise.
+
+Report:
+
+```text
+Implemented:
+- What changed.
+- Important files/areas changed.
+- Verification performed.
+- Any remaining blocker or backend dependency.
+```
+
+Do not paste large amounts of code unless requested.
+
+Do not repeat the entire implementation plan after completing the task.
+
+For planning-only tasks, provide the requested plan and stop without modifying files.
+
+---
+
+# 38. DEFINITION OF DONE
+
+A feature is considered complete when:
+
+* The real backend contract is respected.
+* Existing architecture is preserved.
+* Correct API functions exist.
+* React Query is used correctly for server state.
+* Types are strict.
+* Routes are correctly registered and lazy-loaded.
+* Authorization is correctly integrated.
+* Loading/empty/error/success states are handled.
+* UI is responsive and accessible.
+* No unnecessary dependencies were added.
+* No unrelated code was changed.
+* Relevant verification passes.
+* The implementation is production-oriented.
+
+---
+
+# 39. FINAL ENGINEERING PRINCIPLE
+
+Always optimize for:
+
+```text
+Correctness
+    >
+Architectural consistency
+    >
+Security
+    >
+Maintainability
+    >
+Simplicity
+    >
+Performance
+    >
+Visual polish
+```
+
+while satisfying the actual product requirement.
+
+The best implementation is not the largest or most sophisticated one.
+
+It is the **smallest correct, maintainable, secure implementation that fits the existing architecture and real backend contract.**
+
+When in doubt:
+
+```text
+Search first.
+Read only what matters.
+Reuse what exists.
+Do not guess.
+Change the minimum.
+Verify the result.
+```
