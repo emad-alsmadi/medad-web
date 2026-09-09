@@ -13,6 +13,9 @@ export function useCreateReport() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
       notify.success('تم إنشاء التقرير.');
     },
+    onError: () => {
+      notify.error('فشل إنشاء التقرير. يرجى المحاولة مرة أخرى.');
+    },
   });
 }
 
@@ -24,6 +27,9 @@ export function useUpdateReport(id: number) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
       notify.success('تم تحديث التقرير.');
+    },
+    onError: () => {
+      notify.error('فشل تحديث التقرير. يرجى المحاولة مرة أخرى.');
     },
   });
 }

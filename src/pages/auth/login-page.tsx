@@ -1,15 +1,12 @@
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Navigate, useNavigate } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import { useLogin } from '@/hooks/auth/use-login';
-import { useAuthContext } from '@/contexts/auth-context';
-import { ApiError } from '@/lib/api/client';
-import { ROUTES } from '@/constant/routes';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
+import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 
 const loginSchema = z.object({
@@ -19,16 +16,14 @@ const loginSchema = z.object({
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
-function getLoginErrorMessage(error: unknown): string {
-  if (error instanceof ApiError && error.status === 401) {
-    return 'البريد الإلكتروني أو كلمة المرور غير صحيحة.';
-  }
-  return 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
-}
-
+/**
+ * On success this component doesn't navigate itself — GuestOnlyRoute
+ * (wrapping /login in the route tree) reacts to the auth-state flip and
+ * redirects, honoring the originally requested page via
+ * location.state.from. Keeping that in exactly one place avoids two
+ * guards computing competing redirect targets on the same render.
+ */
 export function LoginPage() {
-  const { isAuthenticated, isLoading } = useAuthContext();
-  const navigate = useNavigate();
   const login = useLogin();
 
   const {
@@ -37,14 +32,8 @@ export function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
-  if (!isLoading && isAuthenticated) {
-    return <Navigate to={ROUTES.home} replace />;
-  }
-
   const onSubmit = handleSubmit((values) => {
-    login.mutate(values, {
-      onSuccess: () => void navigate(ROUTES.home, { replace: true }),
-    });
+    login.mutate(values);
   });
 
   return (
@@ -74,19 +63,13 @@ export function LoginPage() {
               />
             </FormField>
             <FormField label="كلمة المرور" htmlFor="password" error={errors.password?.message}>
-              <Input
+              <PasswordInput
                 id="password"
-                type="password"
                 autoComplete="current-password"
                 aria-invalid={Boolean(errors.password)}
                 {...register('password')}
               />
             </FormField>
-            {login.isError && (
-              <p role="alert" className="text-sm text-destructive">
-                {getLoginErrorMessage(login.error)}
-              </p>
-            )}
             <Button type="submit" className="w-full" disabled={login.isPending}>
               {login.isPending ? 'جاري تسجيل الدخول…' : 'تسجيل الدخول'}
             </Button>

@@ -12,6 +12,9 @@ export function useSetMyReportInfo() {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       notify.success('تم تحديث بيانات التقرير.');
     },
+    onError: () => {
+      notify.error('فشل تحديث بيانات التقرير. يرجى المحاولة مرة أخرى.');
+    },
   });
 }
 
@@ -23,6 +26,9 @@ export function useSetReportInfo(id: string) {
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
       notify.success('تم تحديث بيانات التقرير.');
+    },
+    onError: () => {
+      notify.error('فشل تحديث بيانات التقرير. يرجى المحاولة مرة أخرى.');
     },
   });
 }

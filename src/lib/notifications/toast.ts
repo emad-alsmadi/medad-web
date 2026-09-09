@@ -1,12 +1,13 @@
-import { toast } from 'sonner';
+import { emitToast } from '@/components/ui/toast-sink';
 
 /**
- * Thin wrapper around sonner. Feature code imports this instead of
- * calling sonner's `toast` directly, keeping one swap-out point if the
- * underlying library ever changes.
+ * Thin wrapper around the app's ToastProvider. Feature code imports this
+ * instead of calling emitToast/useToast directly, keeping one swap-out
+ * point if the underlying implementation ever changes.
  */
 export const notify = {
-  success: (message: string) => toast.success(message),
-  error: (message: string) => toast.error(message),
-  info: (message: string) => toast(message),
+  success: (message: string) => emitToast(message, 'success'),
+  error: (message: string) => emitToast(message, 'error'),
+  warning: (message: string) => emitToast(message, 'warning'),
+  info: (message: string) => emitToast(message, 'info'),
 };

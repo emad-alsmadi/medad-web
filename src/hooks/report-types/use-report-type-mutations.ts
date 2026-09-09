@@ -17,6 +17,9 @@ export function useCreateReportType() {
       invalidateReportTypes(queryClient);
       notify.success('تم إنشاء نوع التقرير.');
     },
+    onError: () => {
+      notify.error('فشل إنشاء نوع التقرير. يرجى المحاولة مرة أخرى.');
+    },
   });
 }
 
@@ -28,6 +31,9 @@ export function useUpdateReportType(id: number) {
     onSuccess: () => {
       invalidateReportTypes(queryClient);
       notify.success('تم تحديث نوع التقرير.');
+    },
+    onError: () => {
+      notify.error('فشل تحديث نوع التقرير. يرجى المحاولة مرة أخرى.');
     },
   });
 }

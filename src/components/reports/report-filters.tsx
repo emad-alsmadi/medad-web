@@ -1,6 +1,7 @@
 import { useReportTypes } from '@/hooks/report-types/use-report-types';
 import { Select } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import type { ReportListParams } from '@/types/report';
 
@@ -11,6 +12,10 @@ interface ReportFiltersProps {
 
 export function ReportFilters({ value, onChange }: ReportFiltersProps) {
   const { data: types = [] } = useReportTypes();
+
+  const hasActiveFilters = Boolean(
+    value.typeId || value.from || value.to || (value.sort && value.sort !== 'reportDate,desc'),
+  );
 
   return (
     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -62,6 +67,17 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
           <option value="reportNumber,desc">رقم التقرير (تنازلي)</option>
         </Select>
       </FormField>
+      <div className="flex items-end">
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          onClick={() => onChange({ page: 0 })}
+          disabled={!hasActiveFilters}
+        >
+          مسح الفلاتر
+        </Button>
+      </div>
     </div>
   );
 }

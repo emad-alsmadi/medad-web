@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { ReactNode } from 'react';
 import * as DialogPrimitive from '@radix-ui/react-dialog';
 import { AlertTriangle, Check, Tag } from 'lucide-react';
@@ -33,13 +34,18 @@ export function ConfirmDialog({
   variant = 'confirm',
   isConfirming = false,
 }: ConfirmDialogProps) {
+  const cancelButtonRef = useRef<HTMLButtonElement>(null);
+
   return (
     <DialogPrimitive.Root open={open} onOpenChange={onOpenChange}>
       <DialogPrimitive.Portal>
         <DialogPrimitive.Overlay className="confirm-dialog-backdrop">
           <DialogPrimitive.Content
             className={cn('confirm-dialog', variant === 'info' && 'confirm-dialog--info')}
-            onOpenAutoFocus={(event) => event.preventDefault()}
+            onOpenAutoFocus={(event) => {
+              event.preventDefault();
+              cancelButtonRef.current?.focus();
+            }}
           >
             <div
               className={cn(
@@ -71,6 +77,7 @@ export function ConfirmDialog({
 
             <div className="confirm-dialog__actions">
               <button
+                ref={cancelButtonRef}
                 type="button"
                 className="btn btn-secondary"
                 onClick={() => onOpenChange(false)}
