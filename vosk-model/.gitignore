@@ -1,0 +1,9 @@
+myenv/
+myenv-win/
+model/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.tar
+*.log

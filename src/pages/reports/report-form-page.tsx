@@ -13,6 +13,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DictationButton } from '@/components/shared/dictation-button';
 import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
 import { ROUTES } from '@/constant/routes';
@@ -60,6 +61,8 @@ export function ReportFormPage() {
     register,
     handleSubmit,
     setError,
+    setValue,
+    getValues,
     formState: { errors },
   } = useForm<ReportFormValues>({
     resolver: zodResolver(reportSchema),
@@ -168,7 +171,22 @@ export function ReportFormPage() {
             </div>
 
             {TEXT_FIELDS.map(({ name, label }) => (
-              <FormField key={name} label={label} htmlFor={name} error={errors[name]?.message}>
+              <FormField
+                key={name}
+                label={label}
+                htmlFor={name}
+                error={errors[name]?.message}
+                labelExtra={
+                  <DictationButton
+                    onText={(text) => {
+                      const current = getValues(name) ?? '';
+                      setValue(name, current ? `${current} ${text}` : text, {
+                        shouldDirty: true,
+                      });
+                    }}
+                  />
+                }
+              >
                 <Textarea id={name} {...register(name)} />
               </FormField>
             ))}

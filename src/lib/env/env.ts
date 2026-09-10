@@ -9,6 +9,8 @@ import { z } from 'zod';
 const envSchema = z.object({
   VITE_API_BASE_URL: z.string().url(),
   VITE_APP_ENV: z.enum(['development', 'staging', 'production']).default('development'),
+  /** WebSocket URL of the Vosk speech-recognition server (vosk-model/asr_server.py). */
+  VITE_VOSK_WS_URL: z.string().url().default('ws://localhost:2700'),
 });
 
 export type Env = z.infer<typeof envSchema>;
