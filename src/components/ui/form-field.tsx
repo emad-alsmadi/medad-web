@@ -8,12 +8,17 @@ interface FormFieldProps {
   error?: string;
   className?: string;
   children: ReactNode;
+  /** Optional content rendered inline next to the label (e.g. a dictation button). */
+  labelExtra?: ReactNode;
 }
 
-export function FormField({ label, htmlFor, error, className, children }: FormFieldProps) {
+export function FormField({ label, htmlFor, error, className, children, labelExtra }: FormFieldProps) {
   return (
     <div className={cn('space-y-1.5', className)}>
-      <Label htmlFor={htmlFor}>{label}</Label>
+      <div className="flex items-center justify-between gap-2">
+        <Label htmlFor={htmlFor}>{label}</Label>
+        {labelExtra}
+      </div>
       {children}
       {error && (
         <p role="alert" className="text-sm text-destructive">
