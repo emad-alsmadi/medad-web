@@ -37,12 +37,33 @@ type ReportFormValues = z.infer<typeof reportSchema>;
 const TEXT_FIELDS: {
   name: 'introduction' | 'body' | 'referral' | 'conclusion' | 'summary';
   label: string;
+  placeholder: string;
 }[] = [
-  { name: 'introduction', label: 'المقدمة' },
-  { name: 'body', label: 'النص' },
-  { name: 'referral', label: 'الإحالة' },
-  { name: 'conclusion', label: 'الخاتمة' },
-  { name: 'summary', label: 'الملخص' },
+  {
+    name: 'introduction',
+    label: 'المقدمة',
+    placeholder: 'اكتب مقدمة موجزة توضح موضوع التقرير والغرض منه...',
+  },
+  {
+    name: 'body',
+    label: 'النص',
+    placeholder: 'اكتب التفاصيل الكاملة للتقرير هنا...',
+  },
+  {
+    name: 'referral',
+    label: 'الإحالة',
+    placeholder: 'اذكر الجهة أو القسم الذي يُحال إليه التقرير (إن وجد)...',
+  },
+  {
+    name: 'conclusion',
+    label: 'الخاتمة',
+    placeholder: 'اكتب الاستنتاج أو التوصية الختامية للتقرير...',
+  },
+  {
+    name: 'summary',
+    label: 'الملخص',
+    placeholder: 'اكتب ملخصًا مختصرًا لأهم نقاط التقرير...',
+  },
 ];
 
 export function ReportFormPage() {
@@ -143,6 +164,7 @@ export function ReportFormPage() {
               >
                 <Input
                   id="reportNumber"
+                  placeholder="مثال: 2024-015"
                   aria-invalid={Boolean(errors.reportNumber)}
                   {...register('reportNumber')}
                 />
@@ -170,7 +192,7 @@ export function ReportFormPage() {
               </FormField>
             </div>
 
-            {TEXT_FIELDS.map(({ name, label }) => (
+            {TEXT_FIELDS.map(({ name, label, placeholder }) => (
               <FormField
                 key={name}
                 label={label}
@@ -187,7 +209,7 @@ export function ReportFormPage() {
                   />
                 }
               >
-                <Textarea id={name} {...register(name)} />
+                <Textarea id={name} placeholder={placeholder} {...register(name)} />
               </FormField>
             ))}
 

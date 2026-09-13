@@ -21,15 +21,8 @@ export const reportsGroup: SidebarGroup = {
   links: [
     { to: ROUTES.reports.list, label: 'كل التقارير', icon: <FileText />, end: true },
     { to: ROUTES.reports.create, label: 'تقرير جديد', icon: <FileText /> },
-  ],
-};
-
-export const reportTypesGroup: SidebarGroup = {
-  label: 'أنواع التقارير',
-  icon: <FolderTree />,
-  links: [
-    { to: ROUTES.reportTypes.list, label: 'القائمة', icon: <ListTree />, end: true },
-    { to: ROUTES.reportTypes.tree, label: 'العرض الشجري', icon: <FolderTree /> },
+    { to: ROUTES.reportTypes.list, label: 'أنواع التقارير', icon: <FolderTree /> },
+    { to: ROUTES.reportTypes.tree, label: 'شجرة الأنواع', icon: <ListTree /> },
   ],
 };
 

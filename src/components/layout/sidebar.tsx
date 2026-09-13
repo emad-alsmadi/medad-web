@@ -4,7 +4,7 @@ import { ChevronDown, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useUiStore } from '@/store/ui-store';
 import { ROUTES } from '@/constant/routes';
-import { reportsGroup, reportTypesGroup, type SidebarGroup } from '@/components/layout/sidebar-nav';
+import { reportsGroup, type SidebarGroup } from '@/components/layout/sidebar-nav';
 
 function SidebarGroupItem({ group }: { group: SidebarGroup }) {
   const location = useLocation();
@@ -78,7 +78,6 @@ export function Sidebar({
 
       <nav className="app-sidebar__nav">
         <SidebarGroupItem group={reportsGroup} />
-        <SidebarGroupItem group={reportTypesGroup} />
         {adminGroup && <SidebarGroupItem group={adminGroup} />}
       </nav>
 
