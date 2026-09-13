@@ -2282,11 +2282,24 @@ html.dark .app-top-header__logout-item:hover {
 .app-sidebar__chevron {
   margin-inline-start: auto;
   font-size: 0.65rem !important;
-  transition: transform var(--transition);
+  opacity: 0.6;
+  transition:
+    transform var(--transition),
+    opacity var(--transition);
 }
 
+/*
+ * The toggle keeps its "active" tint (below) even while its panel is
+ * closed, since --active tracks the current route, not the open/closed
+ * state — without a strong visual cue on the chevron itself, a closed-
+ * but-active group can look indistinguishable from an open one at a
+ * glance, reading as "the arrow didn't close it" even though the panel
+ * genuinely collapsed. Full opacity + rotation makes "open" the only
+ * state where the chevron looks emphasized.
+ */
 .app-sidebar__group--open > .app-sidebar__group-toggle .app-sidebar__chevron {
   transform: rotate(-180deg);
+  opacity: 1;
 }
 
 .app-sidebar__group--active > .app-sidebar__group-toggle {
