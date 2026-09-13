@@ -35,8 +35,15 @@ export function GuestOnlyRoute() {
 
   if (isAuthenticated) {
     const from = (location.state as LocationState | null)?.from;
-    const redirectTo = from ? `${from.pathname}${from.search}` : ROUTES.home;
-    return <Navigate to={redirectTo} replace />;
+    // Guard against redirecting back into /login itself: if `from` ever
+    // points at a guest-only route (e.g. a stale history state carried
+    // over from an earlier redirect), honoring it would send an
+    // authenticated visitor straight back to this same component, which
+    // recomputes the same redirect on every render — an infinite
+    // "Maximum update depth exceeded" loop between GuestOnlyRoute and
+    // itself instead of a single one-time redirect.
+    const target = from && from.pathname !== ROUTES.login ? `${from.pathname}${from.search}` : ROUTES.home;
+    return <Navigate to={target} replace />;
   }
 
   return <Outlet />;
