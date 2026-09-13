@@ -1535,6 +1535,11 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   z-index: 1060;
 }
 
+.app-top-header__notifications-menu {
+  z-index: 1080 !important;
+  margin-top: var(--space-2);
+}
+
 .app-top-header__shell {
   position: relative;
   overflow: visible;
@@ -1719,6 +1724,7 @@ html.dark *::-webkit-scrollbar-thumb:hover {
   align-items: center;
   gap: 0.15rem;
   padding: 0.2rem;
+  margin-top: 2px;
   border-radius: var(--radius-full);
   border: 1px solid color-mix(in srgb, var(--syid-gold) 24%, var(--color-border-subtle));
   background: color-mix(in srgb, var(--color-bg) 70%, var(--color-surface));

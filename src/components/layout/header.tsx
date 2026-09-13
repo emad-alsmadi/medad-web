@@ -54,7 +54,11 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                     <Bell />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72">
+                <DropdownMenuContent
+                  align="end"
+                  sideOffset={12}
+                  className="app-top-header__notifications-menu w-72"
+                >
                   <DropdownMenuLabel>الإشعارات</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <div className="px-2.5 py-6 text-center text-sm text-muted-foreground">
