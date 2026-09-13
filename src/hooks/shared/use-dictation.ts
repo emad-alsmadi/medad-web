@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { env } from '@/lib/env/env';
 import { downsampleTo16k, floatTo16BitPCM, VOSK_SAMPLE_RATE } from '@/lib/dictation/pcm';
+import { expandDateTimeKeywords } from '@/lib/dictation/date-time-templates';
 
 export type DictationStatus = 'idle' | 'connecting' | 'recording' | 'error';
 
@@ -100,7 +101,7 @@ export function useDictation({ onFinalText }: UseDictationOptions): UseDictation
     if (finalText) {
       const cleaned = finalText.trim();
       if (cleaned) {
-        onFinalTextRef.current(cleaned);
+        onFinalTextRef.current(expandDateTimeKeywords(cleaned));
       }
       setPartialText('');
     }
