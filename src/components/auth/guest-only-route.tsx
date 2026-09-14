@@ -2,6 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import type { Location } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/auth-context';
 import { ROUTES } from '@/constant/routes';
+import { readAccessToken } from '@/lib/session/session';
 
 interface LocationState {
   from?: Location;
@@ -33,7 +34,16 @@ export function GuestOnlyRoute() {
     return null;
   }
 
-  if (isAuthenticated) {
+  // Must agree with RequireAuth's definition of "authenticated" (context
+  // state AND a usable access-token cookie). Otherwise a state where the
+  // context still says "logged in" but the token cookie is missing or
+  // expired — e.g. it never got set on a non-HTTPS origin, or it expired
+  // while the longer-lived user/refresh cookies haven't — makes the two
+  // guards disagree: RequireAuth bounces to /login, this one bounces
+  // straight back, forever ("Maximum update depth exceeded").
+  const hasToken = Boolean(readAccessToken());
+
+  if (isAuthenticated && hasToken) {
     const from = (location.state as LocationState | null)?.from;
     // Guard against redirecting back into /login itself: if `from` ever
     // points at a guest-only route (e.g. a stale history state carried

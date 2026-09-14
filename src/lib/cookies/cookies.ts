@@ -16,7 +16,13 @@ export function setCookie(name: string, value: string, options: CookieOptions = 
   const { days = 7, path = '/', sameSite = 'Strict', secure = true } = options;
 
   const expires = new Date(Date.now() + days * 24 * 60 * 60 * 1000).toUTCString();
-  const secureFlag = secure ? '; Secure' : '';
+  // A `Secure` cookie is silently refused by the browser on a plain HTTP
+  // origin (e.g. local dev on http://localhost) — only send the flag when
+  // the page itself is actually HTTPS, otherwise the cookie never gets set
+  // at all while other client-side auth state (react-query cache) still
+  // says "logged in", desyncing RequireAuth/GuestOnlyRoute into a redirect
+  // loop between them.
+  const secureFlag = secure && window.location.protocol === 'https:' ? '; Secure' : '';
 
   document.cookie = `${name}=${encodeURIComponent(value)}; expires=${expires}; path=${path}; SameSite=${sameSite}${secureFlag}`;
 }
