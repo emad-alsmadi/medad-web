@@ -15,7 +15,6 @@ import {
   ReportFormPage,
   ReportsListPage,
   ReportTypesListPage,
-  ReportTypesTreePage,
 } from '@/routes/lazy-pages';
 
 function withSuspense(element: React.ReactNode) {
@@ -54,14 +53,12 @@ export const routeConfig: RouteObject[] = [
               { path: ROUTES.home, element: <Navigate to={ROUTES.reports.list} replace /> },
               { path: ROUTES.profile, element: withSuspense(<ProfilePage />) },
               { path: ROUTES.reports.list, element: withSuspense(<ReportsListPage />) },
-              { path: ROUTES.reports.create, element: withSuspense(<ReportFormPage />) },
               {
                 path: ROUTES.reports.detail(':id'),
                 element: withSuspense(<ReportDetailPage />),
               },
               { path: ROUTES.reports.edit(':id'), element: withSuspense(<ReportFormPage />) },
               { path: ROUTES.reportTypes.list, element: withSuspense(<ReportTypesListPage />) },
-              { path: ROUTES.reportTypes.tree, element: withSuspense(<ReportTypesTreePage />) },
             ],
           },
         ],

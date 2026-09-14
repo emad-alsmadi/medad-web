@@ -69,7 +69,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       <DialogContent>
         <DialogTitle>مستخدم جديد</DialogTitle>
         <DialogDescription>
-          سيُنشأ الحساب بدور "مستخدم"؛ يمكن تعديل بيانات التقرير لاحقًا من القائمة.
+          سيُنشأ الحساب بدور "مستخدم"؛ يمكن تعديل بيانات الضبط لاحقًا من القائمة.
         </DialogDescription>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           <FormField label="الاسم الكامل" htmlFor="fullName" error={errors.fullName?.message}>

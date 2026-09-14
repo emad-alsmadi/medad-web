@@ -30,7 +30,7 @@ export function Sidebar({
               className="app-sidebar__logo"
             />
             <span className="app-sidebar__brand-text">
-              <span className="app-sidebar__title">نظام إدارة التقارير مداد</span>
+              <span className="app-sidebar__title">نظام إدارة الضبوط مداد</span>
               <small className="app-sidebar__subtitle">الجمهورية العربية السورية</small>
             </span>
           </NavLink>

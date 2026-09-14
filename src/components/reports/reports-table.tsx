@@ -17,15 +17,15 @@ interface ReportsTableProps {
 
 export function ReportsTable({ reports }: ReportsTableProps) {
   if (reports.length === 0) {
-    return <p className="text-sm text-muted-foreground">لا توجد تقارير.</p>;
+    return <p className="text-sm text-muted-foreground">لا توجد ضبوط.</p>;
   }
 
   return (
     <Table>
-      <TableCaption className="sr-only">التقارير</TableCaption>
+      <TableCaption className="sr-only">الضبوط</TableCaption>
       <TableHeader>
         <TableRow>
-          <TableHead>رقم التقرير</TableHead>
+          <TableHead>رقم الضبط</TableHead>
           <TableHead>التاريخ</TableHead>
           <TableHead>النوع</TableHead>
           <TableHead>المُنشئ</TableHead>

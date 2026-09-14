@@ -63,8 +63,8 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
         >
           <option value="reportDate,desc">التاريخ (الأحدث أولاً)</option>
           <option value="reportDate,asc">التاريخ (الأقدم أولاً)</option>
-          <option value="reportNumber,asc">رقم التقرير (تصاعدي)</option>
-          <option value="reportNumber,desc">رقم التقرير (تنازلي)</option>
+          <option value="reportNumber,asc">رقم الضبط (تصاعدي)</option>
+          <option value="reportNumber,desc">رقم الضبط (تنازلي)</option>
         </Select>
       </FormField>
       <div className="flex items-end">

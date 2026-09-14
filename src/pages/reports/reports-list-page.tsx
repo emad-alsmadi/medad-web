@@ -1,13 +1,15 @@
+import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import { useSearchParams } from 'react-router-dom';
 import { useReports } from '@/hooks/reports/use-reports';
 import { ReportsTable } from '@/components/reports/reports-table';
 import { ReportFilters } from '@/components/reports/report-filters';
+import { CreateReportDialog } from '@/components/reports/create-report-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ROUTES } from '@/constant/routes';
 import type { ReportListParams } from '@/types/report';
 
 function paramsFromSearch(params: URLSearchParams): ReportListParams {
@@ -34,19 +36,21 @@ export function ReportsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = paramsFromSearch(searchParams);
   const { data, isPending, isError, isFetching } = useReports(filters);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const updateFilters = (value: ReportListParams) => setSearchParams(searchFromParams(value));
 
   return (
     <>
       <Helmet>
-        <title>التقارير</title>
+        <title>الضبوط</title>
       </Helmet>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>التقارير</CardTitle>
-          <Button size="sm" asChild>
-            <Link to={ROUTES.reports.create}>إنشاء تقرير</Link>
+          <CardTitle>الضبوط</CardTitle>
+          <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+            <Plus />
+            <span>إنشاء ضبط</span>
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -62,7 +66,7 @@ export function ReportsListPage() {
 
           {isError && (
             <p role="alert" className="text-sm text-destructive">
-              فشل تحميل التقارير. يرجى المحاولة مرة أخرى.
+              فشل تحميل الضبوط. يرجى المحاولة مرة أخرى.
             </p>
           )}
 
@@ -79,6 +83,8 @@ export function ReportsListPage() {
           )}
         </CardContent>
       </Card>
+
+      <CreateReportDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </>
   );
 }

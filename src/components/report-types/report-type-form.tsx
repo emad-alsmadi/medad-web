@@ -92,7 +92,7 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>{reportType ? 'تعديل نوع التقرير' : 'نوع تقرير جديد'}</DialogTitle>
+        <DialogTitle>{reportType ? 'تعديل نوع الضبط' : 'نوع ضبط جديد'}</DialogTitle>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           <FormField label="الاسم" htmlFor="name" error={errors.name?.message}>
             <Input id="name" aria-invalid={Boolean(errors.name)} {...register('name')} />

@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FileText, FolderTree, ListTree, User, Users } from 'lucide-react';
+import { FileText, FolderTree, User, Users } from 'lucide-react';
 import { ROUTES } from '@/constant/routes';
 
 export interface SidebarLink {
@@ -23,13 +23,11 @@ export const profileLink: SidebarLink = {
 };
 
 export const reportsGroup: SidebarGroup = {
-  label: 'التقارير',
+  label: 'الضبوط',
   icon: <FileText />,
   links: [
-    { to: ROUTES.reports.list, label: 'كل التقارير', icon: <FileText />, end: true },
-    { to: ROUTES.reports.create, label: 'تقرير جديد', icon: <FileText /> },
-    { to: ROUTES.reportTypes.list, label: 'أنواع التقارير', icon: <FolderTree /> },
-    { to: ROUTES.reportTypes.tree, label: 'شجرة الأنواع', icon: <ListTree /> },
+    { to: ROUTES.reports.list, label: 'كل الضبوط', icon: <FileText />, end: true },
+    { to: ROUTES.reportTypes.list, label: 'أنواع الضبوط', icon: <FolderTree /> },
   ],
 };
 

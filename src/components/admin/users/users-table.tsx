@@ -52,7 +52,7 @@ export function UsersTable({ users }: UsersTableProps) {
             <TableHead>البريد الإلكتروني</TableHead>
             <TableHead>الدور</TableHead>
             <TableHead>الحالة</TableHead>
-            <TableHead>بيانات التقرير</TableHead>
+            <TableHead>بيانات الضبط</TableHead>
             <TableHead className="text-end">الإجراءات</TableHead>
           </TableRow>
         </TableHeader>
@@ -83,7 +83,7 @@ export function UsersTable({ users }: UsersTableProps) {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onSelect={() => setReportInfoUser(user)}>
                       <FileText />
-                      <span>بيانات التقرير</span>
+                      <span>بيانات الضبط</span>
                     </DropdownMenuItem>
                     <DropdownMenuItem variant="destructive" onSelect={() => setDeleteUser(user)}>
                       <Trash2 />

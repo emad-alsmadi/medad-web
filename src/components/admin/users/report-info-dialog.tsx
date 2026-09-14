@@ -69,7 +69,7 @@ export function ReportInfoDialog({ user, open, onOpenChange }: ReportInfoDialogP
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>بيانات التقرير — {user.fullName}</DialogTitle>
+        <DialogTitle>بيانات الضبط — {user.fullName}</DialogTitle>
         <DialogDescription>جميع الحقول مطلوبة.</DialogDescription>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           {FIELDS.map(({ name, label }) => (

@@ -11,11 +11,9 @@ export const ROUTES = {
   },
   reportTypes: {
     list: '/report-types',
-    tree: '/report-types/tree',
   },
   reports: {
     list: '/reports',
-    create: '/reports/new',
     detail: (id: number | string) => `/reports/${id}`,
     edit: (id: number | string) => `/reports/${id}/edit`,
   },

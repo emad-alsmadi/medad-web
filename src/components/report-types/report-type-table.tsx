@@ -23,7 +23,7 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
   const [deleting, setDeleting] = useState<ReportTypeResponse | null>(null);
 
   if (types.length === 0) {
-    return <p className="text-sm text-muted-foreground">لا توجد أنواع تقارير.</p>;
+    return <p className="text-sm text-muted-foreground">لا توجد أنواع ضبوط.</p>;
   }
 
   const nameById = new Map(types.map((t) => [t.id, t.name]));
@@ -31,7 +31,7 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
   return (
     <>
       <Table>
-        <TableCaption className="sr-only">أنواع التقارير</TableCaption>
+        <TableCaption className="sr-only">أنواع الضبوط</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>الاسم</TableHead>

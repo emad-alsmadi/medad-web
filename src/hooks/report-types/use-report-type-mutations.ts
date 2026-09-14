@@ -15,10 +15,10 @@ export function useCreateReportType() {
     mutationFn: create,
     onSuccess: () => {
       invalidateReportTypes(queryClient);
-      notify.success('تم إنشاء نوع التقرير.');
+      notify.success('تم إنشاء نوع الضبط.');
     },
     onError: () => {
-      notify.error('فشل إنشاء نوع التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل إنشاء نوع الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }
@@ -30,10 +30,10 @@ export function useUpdateReportType(id: number) {
     mutationFn: (body: Parameters<typeof update>[1]) => update(id, body),
     onSuccess: () => {
       invalidateReportTypes(queryClient);
-      notify.success('تم تحديث نوع التقرير.');
+      notify.success('تم تحديث نوع الضبط.');
     },
     onError: () => {
-      notify.error('فشل تحديث نوع التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل تحديث نوع الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }
@@ -45,14 +45,14 @@ export function useDeleteReportType() {
     mutationFn: remove,
     onSuccess: () => {
       invalidateReportTypes(queryClient);
-      notify.success('تم حذف نوع التقرير.');
+      notify.success('تم حذف نوع الضبط.');
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
-        notify.error('لا يمكن الحذف: يحتوي هذا النوع على أنواع فرعية أو تقارير مرتبطة به.');
+        notify.error('لا يمكن الحذف: يحتوي هذا النوع على أنواع فرعية أو ضبوط مرتبطة به.');
         return;
       }
-      notify.error('فشل حذف نوع التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل حذف نوع الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }

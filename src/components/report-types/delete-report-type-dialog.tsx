@@ -19,7 +19,7 @@ export function DeleteReportTypeDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>حذف نوع التقرير</DialogTitle>
+        <DialogTitle>حذف نوع الضبط</DialogTitle>
         <DialogDescription>
           هل أنت متأكد من حذف <strong>{reportType.name}</strong>؟ لا يمكن التراجع عن هذا الإجراء.
         </DialogDescription>

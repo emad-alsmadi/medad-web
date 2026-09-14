@@ -39,7 +39,7 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
             </button>
             <div className="app-top-header__brand">
               <span className="app-top-header__brand-text">
-                <span className="app-top-header__brand-title">  نظام إدارة التقارير</span>
+                <span className="app-top-header__brand-title">  نظام إدارة الضبوط</span>
                 <span className="app-top-header__brand-subtitle">الجمهورية العربية السورية</span>
               </span>
             </div>

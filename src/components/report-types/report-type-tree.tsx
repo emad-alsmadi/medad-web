@@ -6,7 +6,7 @@ interface ReportTypeTreeProps {
 
 export function ReportTypeTree({ nodes }: ReportTypeTreeProps) {
   if (nodes.length === 0) {
-    return <p className="text-sm text-muted-foreground">لا توجد أنواع تقارير.</p>;
+    return <p className="text-sm text-muted-foreground">لا توجد أنواع ضبوط.</p>;
   }
 
   return (

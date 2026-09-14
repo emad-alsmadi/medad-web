@@ -10,10 +10,10 @@ export function useSetMyReportInfo() {
     mutationFn: setMyReportInfo,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      notify.success('تم تحديث بيانات التقرير.');
+      notify.success('تم تحديث بيانات الضبط.');
     },
     onError: () => {
-      notify.error('فشل تحديث بيانات التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل تحديث بيانات الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }
@@ -25,10 +25,10 @@ export function useSetReportInfo(id: string) {
     mutationFn: (body: Parameters<typeof setReportInfo>[1]) => setReportInfo(id, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      notify.success('تم تحديث بيانات التقرير.');
+      notify.success('تم تحديث بيانات الضبط.');
     },
     onError: () => {
-      notify.error('فشل تحديث بيانات التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل تحديث بيانات الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }

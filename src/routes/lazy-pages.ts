@@ -22,12 +22,6 @@ export const ReportTypesListPage = lazy(() =>
   })),
 );
 
-export const ReportTypesTreePage = lazy(() =>
-  import('@/pages/report-types/report-types-tree-page').then((m) => ({
-    default: m.ReportTypesTreePage,
-  })),
-);
-
 export const ReportsListPage = lazy(() =>
   import('@/pages/reports/reports-list-page').then((m) => ({ default: m.ReportsListPage })),
 );

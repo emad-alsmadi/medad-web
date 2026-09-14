@@ -14,7 +14,7 @@ const FIELDS: {
   label: string;
 }[] = [
   { key: 'introduction', label: 'المقدمة' },
-  { key: 'body', label: 'النص' },
+  { key: 'body', label: 'المتن' },
   { key: 'referral', label: 'الإحالة' },
   { key: 'conclusion', label: 'الخاتمة' },
   { key: 'summary', label: 'الملخص' },
@@ -35,11 +35,11 @@ export function ReportDetailPage() {
   return (
     <>
       <Helmet>
-        <title>{report ? `تقرير ${report.reportNumber}` : 'تقرير'}</title>
+        <title>{report ? `ضبط ${report.reportNumber}` : 'ضبط'}</title>
       </Helmet>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>{report ? `تقرير ${report.reportNumber}` : 'تقرير'}</CardTitle>
+          <CardTitle>{report ? `ضبط ${report.reportNumber}` : 'ضبط'}</CardTitle>
           {report && (
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" asChild>
@@ -64,7 +64,7 @@ export function ReportDetailPage() {
 
           {isError && (
             <p role="alert" className="text-sm text-destructive">
-              فشل تحميل التقرير. ربما لم يعد موجودًا.
+              فشل تحميل الضبط. ربما لم يعد موجودًا.
             </p>
           )}
 

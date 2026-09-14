@@ -11,10 +11,10 @@ export function useCreateReport() {
     mutationFn: create,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
-      notify.success('تم إنشاء التقرير.');
+      notify.success('تم إنشاء الضبط.');
     },
     onError: () => {
-      notify.error('فشل إنشاء التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل إنشاء الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }
@@ -26,10 +26,10 @@ export function useUpdateReport(id: number) {
     mutationFn: (body: Parameters<typeof update>[1]) => update(id, body),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
-      notify.success('تم تحديث التقرير.');
+      notify.success('تم تحديث الضبط.');
     },
     onError: () => {
-      notify.error('فشل تحديث التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل تحديث الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }
@@ -41,14 +41,14 @@ export function useDeleteReport() {
     mutationFn: remove,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
-      notify.success('تم حذف التقرير.');
+      notify.success('تم حذف الضبط.');
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 403) {
-        notify.error('ليس لديك صلاحية لحذف هذا التقرير.');
+        notify.error('ليس لديك صلاحية لحذف هذا الضبط.');
         return;
       }
-      notify.error('فشل حذف التقرير. يرجى المحاولة مرة أخرى.');
+      notify.error('فشل حذف الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }

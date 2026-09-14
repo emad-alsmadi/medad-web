@@ -21,9 +21,9 @@ export function DeleteReportDialog({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>حذف التقرير</DialogTitle>
+        <DialogTitle>حذف الضبط</DialogTitle>
         <DialogDescription>
-          هل أنت متأكد من حذف التقرير <strong>{report.reportNumber}</strong>؟ لا يمكن التراجع عن هذا
+          هل أنت متأكد من حذف الضبط <strong>{report.reportNumber}</strong>؟ لا يمكن التراجع عن هذا
           الإجراء.
         </DialogDescription>
         <div className="flex justify-end gap-2">

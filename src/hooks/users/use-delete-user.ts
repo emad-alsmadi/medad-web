@@ -15,7 +15,7 @@ export function useDeleteUser() {
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) {
-        notify.error('لا يمكن الحذف: يوجد تقارير مرتبطة بهذا المستخدم.');
+        notify.error('لا يمكن الحذف: يوجد ضبوط مرتبطة بهذا المستخدم.');
         return;
       }
       notify.error('فشل حذف المستخدم. يرجى المحاولة مرة أخرى.');

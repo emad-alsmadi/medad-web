@@ -132,7 +132,7 @@ function ReportInfoCard({ reportInfo }: { reportInfo: ReportInfo | null }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>بيانات التقرير</CardTitle>
+        <CardTitle>بيانات الضبط</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
