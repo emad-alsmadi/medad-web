@@ -1,4 +1,5 @@
 import { apiClient } from '@/lib/api/client';
+import { register } from '@/lib/auth/api';
 import type { ReportInfo, UserResponse } from '@/types/user';
 
 /**
@@ -9,6 +10,15 @@ import type { ReportInfo, UserResponse } from '@/types/user';
 export function list(): Promise<UserResponse[]> {
   return apiClient.get<UserResponse[]>('/users');
 }
+
+/**
+ * There is no admin-only "create user" endpoint — the backend only
+ * exposes POST /auth/register, which always assigns the USER role
+ * server-side (role is never accepted from the client). Re-exported here
+ * so the admin users feature can create accounts without importing
+ * lib/auth directly.
+ */
+export const create = register;
 
 export function get(id: string): Promise<UserResponse> {
   return apiClient.get<UserResponse>(`/users/${id}`);

@@ -1,4 +1,5 @@
 import { Bell, ChevronDown, LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,6 +10,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useUiStore } from '@/store/ui-store';
 import { useTheme } from '@/contexts/theme-context';
+import { ROUTES } from '@/constant/routes';
 import type { AuthUser } from '@/types/auth';
 
 const ROLE_LABELS: Record<AuthUser['role'], string> = {
@@ -19,6 +21,7 @@ const ROLE_LABELS: Record<AuthUser['role'], string> = {
 export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: () => void }) {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
   const { theme, setTheme } = useTheme();
+  const navigate = useNavigate();
 
   return (
     <header className="app-top-header" id="app-top-header">
@@ -102,7 +105,7 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                   </span>
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem>
+                <DropdownMenuItem onSelect={() => void navigate(ROUTES.profile)}>
                   <User />
                   <span>الملف الشخصي</span>
                 </DropdownMenuItem>

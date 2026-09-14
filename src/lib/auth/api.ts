@@ -32,7 +32,7 @@ export function login(payload: LoginPayload): Promise<LoginResponse> {
   return apiClient.post<LoginResponse>('/auth/login', payload);
 }
 
-/** Not wired to any UI yet — kept for a future admin-invite/self-signup feature. */
+/** Used by the admin "create user" feature (lib/users/api.ts re-exports this as `create`). */
 export function register(payload: RegisterPayload): Promise<UserResponse> {
   return apiClient.post<UserResponse>('/auth/register', payload);
 }

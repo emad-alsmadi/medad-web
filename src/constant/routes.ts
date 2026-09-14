@@ -5,6 +5,7 @@
 export const ROUTES = {
   home: '/',
   login: '/login',
+  profile: '/profile',
   admin: {
     users: '/admin/users',
   },

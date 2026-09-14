@@ -8,6 +8,10 @@ export const LoginPage = lazy(() =>
   import('@/pages/auth/login-page').then((m) => ({ default: m.LoginPage })),
 );
 
+export const ProfilePage = lazy(() =>
+  import('@/pages/profile/profile-page').then((m) => ({ default: m.ProfilePage })),
+);
+
 export const AdminUsersListPage = lazy(() =>
   import('@/pages/admin/users/users-list-page').then((m) => ({ default: m.UsersListPage })),
 );

@@ -1,7 +1,6 @@
 import { Suspense } from 'react';
 import type { RouteObject } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
-import { AdminLayout } from '@/layouts/admin-layout';
 import { AuthenticatedLayout } from '@/layouts/authenticated-layout';
 import { RequireAuth } from '@/components/auth/require-auth';
 import { RequireRole } from '@/components/auth/require-role';
@@ -11,6 +10,7 @@ import { ROUTES } from '@/constant/routes';
 import {
   AdminUsersListPage,
   LoginPage,
+  ProfilePage,
   ReportDetailPage,
   ReportFormPage,
   ReportsListPage,
@@ -52,6 +52,7 @@ export const routeConfig: RouteObject[] = [
             element: <AuthenticatedLayout />,
             children: [
               { path: ROUTES.home, element: <Navigate to={ROUTES.reports.list} replace /> },
+              { path: ROUTES.profile, element: withSuspense(<ProfilePage />) },
               { path: ROUTES.reports.list, element: withSuspense(<ReportsListPage />) },
               { path: ROUTES.reports.create, element: withSuspense(<ReportFormPage />) },
               {
@@ -69,7 +70,7 @@ export const routeConfig: RouteObject[] = [
         element: <RequireRole allowedRoles={['ADMIN']} />,
         children: [
           {
-            element: <AdminLayout />,
+            element: <AuthenticatedLayout />,
             children: [
               { path: ROUTES.admin.users, element: withSuspense(<AdminUsersListPage />) },
             ],

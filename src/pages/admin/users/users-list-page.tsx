@@ -1,8 +1,12 @@
+import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
+import { UserPlus } from 'lucide-react';
 import { useUsers } from '@/hooks/users/use-users';
 import { UsersTable } from '@/components/admin/users/users-table';
+import { CreateUserDialog } from '@/components/admin/users/create-user-dialog';
 import { UsersTableSkeleton } from '@/components/admin/skeletons/users-table-skeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 /**
  * Route-level component: page -> hook -> lib/API -> react-query -> UI
@@ -11,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
  */
 export function UsersListPage() {
   const { data, isPending, isError } = useUsers();
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   return (
     <>
@@ -18,8 +23,12 @@ export function UsersListPage() {
         <title>المستخدمون · الإدارة</title>
       </Helmet>
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>المستخدمون</CardTitle>
+          <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+            <UserPlus />
+            <span>مستخدم جديد</span>
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           {isPending && <UsersTableSkeleton />}
@@ -33,6 +42,8 @@ export function UsersListPage() {
           {data && <UsersTable users={data} />}
         </CardContent>
       </Card>
+
+      <CreateUserDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
     </>
   );
 }

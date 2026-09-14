@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { FileText, FolderTree, ListTree, Users } from 'lucide-react';
+import { FileText, FolderTree, ListTree, User, Users } from 'lucide-react';
 import { ROUTES } from '@/constant/routes';
 
 export interface SidebarLink {
@@ -14,6 +14,13 @@ export interface SidebarGroup {
   icon: ReactNode;
   links: SidebarLink[];
 }
+
+export const profileLink: SidebarLink = {
+  to: ROUTES.profile,
+  label: 'الملف الشخصي',
+  icon: <User />,
+  end: true,
+};
 
 export const reportsGroup: SidebarGroup = {
   label: 'التقارير',
