@@ -6,6 +6,7 @@ import { useReports } from '@/hooks/reports/use-reports';
 import { ReportsTable } from '@/components/reports/reports-table';
 import { ReportFilters } from '@/components/reports/report-filters';
 import { CreateReportDialog } from '@/components/reports/create-report-dialog';
+import { ReportDetailDialog } from '@/components/reports/report-detail-dialog';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
@@ -37,8 +38,15 @@ export function ReportsListPage() {
   const filters = paramsFromSearch(searchParams);
   const { data, isPending, isError, isFetching } = useReports(filters);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const viewId = searchParams.has('view') ? Number(searchParams.get('view')) : null;
 
   const updateFilters = (value: ReportListParams) => setSearchParams(searchFromParams(value));
+
+  const closeDetail = () => {
+    const params = new URLSearchParams(searchParams);
+    params.delete('view');
+    setSearchParams(params);
+  };
 
   return (
     <>
@@ -85,6 +93,12 @@ export function ReportsListPage() {
       </Card>
 
       <CreateReportDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+
+      <ReportDetailDialog
+        reportId={viewId}
+        open={viewId !== null && !Number.isNaN(viewId)}
+        onOpenChange={(open) => !open && closeDetail()}
+      />
     </>
   );
 }

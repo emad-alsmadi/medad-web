@@ -44,7 +44,7 @@ export function CreateReportDialog({ open, onOpenChange }: CreateReportDialogPro
         onOpenChange(next);
       }}
     >
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] rounded-[6px]">
         <DialogTitle>إنشاء ضبط</DialogTitle>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           <ReportFormFields form={form} />
