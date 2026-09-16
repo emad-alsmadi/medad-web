@@ -3,7 +3,12 @@ import { LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useUiStore } from '@/store/ui-store';
 import { ROUTES } from '@/constant/routes';
-import { profileLink, reportsGroup, type SidebarGroup } from '@/components/layout/sidebar-nav';
+import {
+  dashboardLink,
+  profileLink,
+  reportsGroup,
+  type SidebarGroup,
+} from '@/components/layout/sidebar-nav';
 import { SidebarLinkItem } from '@/components/layout/sidebar-link-item';
 import { SidebarGroupItem } from '@/components/layout/sidebar-group-item';
 
@@ -30,7 +35,7 @@ export function Sidebar({
               className="app-sidebar__logo"
             />
             <span className="app-sidebar__brand-text">
-              <span className="app-sidebar__title">نظام إدارة الضبوط مداد</span>
+              <span className="app-sidebar__title">نظام إدارة الضبوط </span>
               <small className="app-sidebar__subtitle">الجمهورية العربية السورية</small>
             </span>
           </NavLink>
@@ -38,6 +43,7 @@ export function Sidebar({
       </div>
 
       <nav className="app-sidebar__nav">
+        {adminGroup && <SidebarLinkItem link={dashboardLink} />}
         <SidebarGroupItem group={reportsGroup} />
         <SidebarLinkItem link={profileLink} />
         {adminGroup && <SidebarGroupItem group={adminGroup} />}

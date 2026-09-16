@@ -53,7 +53,12 @@ export function LoginPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
-            <FormField label="البريد الإلكتروني" htmlFor="email" error={errors.email?.message}>
+            <FormField
+              label="البريد الإلكتروني"
+              htmlFor="email"
+              error={errors.email?.message}
+              required
+            >
               <Input
                 id="email"
                 type="email"
@@ -62,7 +67,12 @@ export function LoginPage() {
                 {...register('email')}
               />
             </FormField>
-            <FormField label="كلمة المرور" htmlFor="password" error={errors.password?.message}>
+            <FormField
+              label="كلمة المرور"
+              htmlFor="password"
+              error={errors.password?.message}
+              required
+            >
               <PasswordInput
                 id="password"
                 autoComplete="current-password"

@@ -8,8 +8,10 @@ import { GuestOnlyRoute } from '@/components/auth/guest-only-route';
 import { RouteFallback } from '@/components/common/route-fallback';
 import { ROUTES } from '@/constant/routes';
 import {
+  AdminDashboardPage,
   AdminUsersListPage,
   LoginPage,
+  NotFoundPage,
   ProfilePage,
   ReportDetailPage,
   ReportFormPage,
@@ -69,6 +71,7 @@ export const routeConfig: RouteObject[] = [
           {
             element: <AuthenticatedLayout />,
             children: [
+              { path: ROUTES.admin.dashboard, element: withSuspense(<AdminDashboardPage />) },
               { path: ROUTES.admin.users, element: withSuspense(<AdminUsersListPage />) },
             ],
           },
@@ -76,5 +79,5 @@ export const routeConfig: RouteObject[] = [
       },
     ],
   },
-  { path: '*', element: <Navigate to={ROUTES.home} replace /> },
+  { path: '*', element: withSuspense(<NotFoundPage />) },
 ];

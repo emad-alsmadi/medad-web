@@ -10,7 +10,13 @@ import {
 } from '@/hooks/report-types/use-report-types';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import {
+  DropdownSelect,
+  DropdownSelectContent,
+  DropdownSelectItem,
+  DropdownSelectTrigger,
+  DropdownSelectValue,
+} from '@/components/ui/dropdown-select';
 import { Button } from '@/components/ui/button';
 import { DictationTextarea } from '@/components/shared/dictation-textarea';
 import { ApiError } from '@/lib/api/client';
@@ -182,20 +188,19 @@ function ReportTypeCascadeSelect({ value, onChange, error }: ReportTypeCascadeSe
 
   return (
     <>
-      <FormField label="نوع الضبط الرئيسي" htmlFor="reportTypeLevel-0" error={error}>
-        <Select
-          id="reportTypeLevel-0"
-          aria-invalid={Boolean(error)}
-          value={rootSelected}
-          onChange={(e) => selectRoot(e.target.value)}
-        >
-          <option value="">اختر نوعًا</option>
-          {roots.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </Select>
+      <FormField label="نوع الضبط الرئيسي" htmlFor="reportTypeLevel-0" error={error} required>
+        <DropdownSelect value={rootSelected} onValueChange={selectRoot}>
+          <DropdownSelectTrigger id="reportTypeLevel-0" aria-invalid={Boolean(error)}>
+            <DropdownSelectValue placeholder="اختر نوعًا" />
+          </DropdownSelectTrigger>
+          <DropdownSelectContent>
+            {roots.map((t) => (
+              <DropdownSelectItem key={t.id} value={String(t.id)}>
+                {t.name}
+              </DropdownSelectItem>
+            ))}
+          </DropdownSelectContent>
+        </DropdownSelect>
       </FormField>
       {rootSelected && rootHasChildren && (
         <ReportTypeCascadeChildLevel
@@ -262,18 +267,18 @@ function ReportTypeCascadeChildLevel({
       label={`نوع فرعي ${levelIndex > 1 ? levelIndex : ''}`.trim()}
       htmlFor={`reportTypeLevel-${levelIndex}`}
     >
-      <Select
-        id={`reportTypeLevel-${levelIndex}`}
-        value={selected}
-        onChange={(e) => onSelect(e.target.value, false)}
-      >
-        <option value="">اختر نوعًا</option>
-        {options.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.name}
-          </option>
-        ))}
-      </Select>
+      <DropdownSelect value={selected} onValueChange={(id) => onSelect(id, false)}>
+        <DropdownSelectTrigger id={`reportTypeLevel-${levelIndex}`}>
+          <DropdownSelectValue placeholder="اختر نوعًا" />
+        </DropdownSelectTrigger>
+        <DropdownSelectContent>
+          {options.map((t) => (
+            <DropdownSelectItem key={t.id} value={String(t.id)}>
+              {t.name}
+            </DropdownSelectItem>
+          ))}
+        </DropdownSelectContent>
+      </DropdownSelect>
     </FormField>
   );
 }
@@ -301,7 +306,12 @@ export function ReportFormFields({ form }: ReportFormFieldsProps) {
   return (
     <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <FormField label="رقم الضبط" htmlFor="reportNumber" error={errors.reportNumber?.message}>
+        <FormField
+          label="رقم الضبط"
+          htmlFor="reportNumber"
+          error={errors.reportNumber?.message}
+          required
+        >
           <Input
             id="reportNumber"
             placeholder="مثال: 2024-015"

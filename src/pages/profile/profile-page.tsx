@@ -137,7 +137,13 @@ function ReportInfoCard({ reportInfo }: { reportInfo: ReportInfo | null }) {
       <CardContent>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           {FIELDS.map(({ name, label }) => (
-            <FormField key={name} label={label} htmlFor={name} error={errors[name]?.message}>
+            <FormField
+              key={name}
+              label={label}
+              htmlFor={name}
+              error={errors[name]?.message}
+              required
+            >
               <Input id={name} aria-invalid={Boolean(errors[name])} {...register(name)} />
             </FormField>
           ))}

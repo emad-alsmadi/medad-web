@@ -72,7 +72,12 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
           سيُنشأ الحساب بدور "مستخدم"؛ يمكن تعديل بيانات الضبط لاحقًا من القائمة.
         </DialogDescription>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
-          <FormField label="الاسم الكامل" htmlFor="fullName" error={errors.fullName?.message}>
+          <FormField
+            label="الاسم الكامل"
+            htmlFor="fullName"
+            error={errors.fullName?.message}
+            required
+          >
             <Input
               id="fullName"
               autoComplete="name"
@@ -80,7 +85,12 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               {...register('fullName')}
             />
           </FormField>
-          <FormField label="البريد الإلكتروني" htmlFor="email" error={errors.email?.message}>
+          <FormField
+            label="البريد الإلكتروني"
+            htmlFor="email"
+            error={errors.email?.message}
+            required
+          >
             <Input
               id="email"
               type="email"
@@ -89,7 +99,12 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               {...register('email')}
             />
           </FormField>
-          <FormField label="كلمة المرور" htmlFor="password" error={errors.password?.message}>
+          <FormField
+            label="كلمة المرور"
+            htmlFor="password"
+            error={errors.password?.message}
+            required
+          >
             <PasswordInput
               id="password"
               autoComplete="new-password"

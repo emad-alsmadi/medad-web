@@ -43,7 +43,7 @@ export function ReportFormPage() {
 
   const onSubmit = handleSubmit((values) => {
     mutation.mutate(reportFormValuesToBody(values), {
-      onSuccess: (data) => void navigate(ROUTES.reports.detail(data.id)),
+      onSuccess: (data) => void navigate(`${ROUTES.reports.list}?view=${data.id}`),
       onError: (error) => applyReportFormApiError(error, setError),
     });
   });

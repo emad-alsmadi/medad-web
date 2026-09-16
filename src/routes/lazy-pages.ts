@@ -16,6 +16,10 @@ export const AdminUsersListPage = lazy(() =>
   import('@/pages/admin/users/users-list-page').then((m) => ({ default: m.UsersListPage })),
 );
 
+export const AdminDashboardPage = lazy(() =>
+  import('@/pages/admin/dashboard/dashboard-page').then((m) => ({ default: m.DashboardPage })),
+);
+
 export const ReportTypesListPage = lazy(() =>
   import('@/pages/report-types/report-types-list-page').then((m) => ({
     default: m.ReportTypesListPage,
@@ -32,4 +36,8 @@ export const ReportDetailPage = lazy(() =>
 
 export const ReportFormPage = lazy(() =>
   import('@/pages/reports/report-form-page').then((m) => ({ default: m.ReportFormPage })),
+);
+
+export const NotFoundPage = lazy(() =>
+  import('@/pages/not-found/not-found-page').then((m) => ({ default: m.NotFoundPage })),
 );

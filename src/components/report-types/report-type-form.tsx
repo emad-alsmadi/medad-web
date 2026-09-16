@@ -1,10 +1,16 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
+import {
+  DropdownSelect,
+  DropdownSelectContent,
+  DropdownSelectItem,
+  DropdownSelectTrigger,
+  DropdownSelectValue,
+} from '@/components/ui/dropdown-select';
 import { Button } from '@/components/ui/button';
 import { useReportTypes } from '@/hooks/report-types/use-report-types';
 import {
@@ -22,6 +28,8 @@ const reportTypeSchema = z.object({
 });
 
 type ReportTypeFormValues = z.infer<typeof reportTypeSchema>;
+
+const ROOT_PARENT = 'root';
 
 interface ReportTypeFormProps {
   /** When provided, the form edits this type; otherwise it creates a new one. */
@@ -54,6 +62,7 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
 
   const {
     register,
+    control,
     handleSubmit,
     setError,
     formState: { errors },
@@ -94,13 +103,14 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
       <DialogContent>
         <DialogTitle>{reportType ? 'تعديل نوع الضبط' : 'نوع ضبط جديد'}</DialogTitle>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
-          <FormField label="الاسم" htmlFor="name" error={errors.name?.message}>
+          <FormField label="الاسم" htmlFor="name" error={errors.name?.message} required>
             <Input id="name" aria-invalid={Boolean(errors.name)} {...register('name')} />
           </FormField>
           <FormField
             label="عدد الشهود"
             htmlFor="witnessNumber"
             error={errors.witnessNumber?.message}
+            required
           >
             <Input
               id="witnessNumber"
@@ -111,14 +121,28 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
             />
           </FormField>
           <FormField label="النوع الأب" htmlFor="parentId" error={errors.parentId?.message}>
-            <Select id="parentId" {...register('parentId')}>
-              <option value="">بلا (جذر)</option>
-              {parentOptions.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.name}
-                </option>
-              ))}
-            </Select>
+            <Controller
+              control={control}
+              name="parentId"
+              render={({ field }) => (
+                <DropdownSelect
+                  value={field.value === '' ? ROOT_PARENT : field.value}
+                  onValueChange={(next) => field.onChange(next === ROOT_PARENT ? '' : next)}
+                >
+                  <DropdownSelectTrigger id="parentId" aria-invalid={Boolean(errors.parentId)}>
+                    <DropdownSelectValue />
+                  </DropdownSelectTrigger>
+                  <DropdownSelectContent>
+                    <DropdownSelectItem value={ROOT_PARENT}>بلا (جذر)</DropdownSelectItem>
+                    {parentOptions.map((t) => (
+                      <DropdownSelectItem key={t.id} value={String(t.id)}>
+                        {t.name}
+                      </DropdownSelectItem>
+                    ))}
+                  </DropdownSelectContent>
+                </DropdownSelect>
+              )}
+            />
           </FormField>
           <Button type="submit" className="w-full" disabled={mutation.isPending}>
             {mutation.isPending ? 'جاري الحفظ…' : 'حفظ'}

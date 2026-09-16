@@ -2,12 +2,14 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Plus } from 'lucide-react';
 import { useReportTypes, useReportTypesTree } from '@/hooks/report-types/use-report-types';
+import { useClientPagination } from '@/hooks/shared/use-client-pagination';
 import { useAuthContext } from '@/contexts/auth-context';
 import { ReportTypeTable } from '@/components/report-types/report-type-table';
 import { ReportTypeTree } from '@/components/report-types/report-type-tree';
 import { ReportTypeForm } from '@/components/report-types/report-type-form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils/cn';
 
@@ -70,6 +72,7 @@ export function ReportTypesListPage() {
 
 function ReportTypesListView({ canManage }: { canManage: boolean }) {
   const { data, isPending, isError } = useReportTypes();
+  const { page, totalPages, pageItems, setPage } = useClientPagination(data ?? []);
 
   if (isPending) {
     return (
@@ -89,7 +92,12 @@ function ReportTypesListView({ canManage }: { canManage: boolean }) {
     );
   }
 
-  return <ReportTypeTable types={data ?? []} canManage={canManage} />;
+  return (
+    <>
+      <ReportTypeTable types={pageItems} canManage={canManage} />
+      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+    </>
+  );
 }
 
 function ReportTypesTreeView() {

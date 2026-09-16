@@ -54,20 +54,20 @@ export function ReportsTable({ reports }: ReportsTableProps) {
         </TableHeader>
         <TableBody>
           {reports.map((report) => (
-            <TableRow key={report.id}>
+            <TableRow
+              key={report.id}
+              onClick={() => setDetailReportId(report.id)}
+              className="cursor-pointer"
+            >
               <TableCell>
-                <button
-                  type="button"
-                  onClick={() => setDetailReportId(report.id)}
-                  className="font-medium text-primary hover:underline"
-                >
+                <span className="font-medium text-primary hover:underline">
                   {report.reportNumber}
-                </button>
+                </span>
               </TableCell>
               <TableCell>{report.reportDate}</TableCell>
               <TableCell>{report.reportType.name}</TableCell>
               <TableCell>{report.creator.fullName}</TableCell>
-              <TableCell className="text-end">
+              <TableCell className="text-end" onClick={(e) => e.stopPropagation()}>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="icon" aria-label="إجراءات الضبط">

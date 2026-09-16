@@ -7,6 +7,7 @@ export const ROUTES = {
   login: '/login',
   profile: '/profile',
   admin: {
+    dashboard: '/admin/dashboard',
     users: '/admin/users',
   },
   reportTypes: {

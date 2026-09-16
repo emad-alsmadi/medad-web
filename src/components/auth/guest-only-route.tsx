@@ -1,6 +1,7 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import type { Location } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/auth-context';
+import { RouteFallback } from '@/components/common/route-fallback';
 import { ROUTES } from '@/constant/routes';
 import { readAccessToken } from '@/lib/session/session';
 
@@ -31,7 +32,7 @@ export function GuestOnlyRoute() {
   const location = useLocation();
 
   if (isLoading) {
-    return null;
+    return <RouteFallback />;
   }
 
   // Must agree with RequireAuth's definition of "authenticated" (context

@@ -1,5 +1,6 @@
 import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/auth-context';
+import { RouteFallback } from '@/components/common/route-fallback';
 import { ROUTES } from '@/constant/routes';
 import { readAccessToken } from '@/lib/session/session';
 
@@ -24,7 +25,7 @@ export function RequireAuth() {
   const hasToken = Boolean(readAccessToken());
 
   if (isLoading) {
-    return null;
+    return <RouteFallback />;
   }
 
   if (!isAuthenticated || !user || !hasToken) {

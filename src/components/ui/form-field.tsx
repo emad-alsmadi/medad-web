@@ -10,13 +10,31 @@ interface FormFieldProps {
   children: ReactNode;
   /** Optional content rendered inline next to the label (e.g. a dictation button). */
   labelExtra?: ReactNode;
+  /** Marks the field as required, showing an asterisk next to its label. */
+  required?: boolean;
 }
 
-export function FormField({ label, htmlFor, error, className, children, labelExtra }: FormFieldProps) {
+export function FormField({
+  label,
+  htmlFor,
+  error,
+  className,
+  children,
+  labelExtra,
+  required,
+}: FormFieldProps) {
   return (
     <div className={cn('space-y-1.5', className)}>
       <div className="flex items-center justify-between gap-2">
-        <Label htmlFor={htmlFor}>{label}</Label>
+        <Label htmlFor={htmlFor}>
+          {label}
+          {required && (
+            <span className="text-destructive" aria-hidden="true">
+              {' '}
+              *
+            </span>
+          )}
+        </Label>
         {labelExtra}
       </div>
       {children}

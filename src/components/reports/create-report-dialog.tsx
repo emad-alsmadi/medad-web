@@ -30,7 +30,7 @@ export function CreateReportDialog({ open, onOpenChange }: CreateReportDialogPro
       onSuccess: (data) => {
         reset();
         onOpenChange(false);
-        void navigate(ROUTES.reports.detail(data.id));
+        void navigate(`${ROUTES.reports.list}?view=${data.id}`);
       },
       onError: (error) => applyReportFormApiError(error, setError),
     });
