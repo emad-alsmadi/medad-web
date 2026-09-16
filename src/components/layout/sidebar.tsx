@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LogOut } from 'lucide-react';
+import { LogOut, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useUiStore } from '@/store/ui-store';
 import { ROUTES } from '@/constant/routes';
@@ -20,6 +20,7 @@ export function Sidebar({
   onLogout: () => void;
 }) {
   const isSidebarOpen = useUiStore((state) => state.isSidebarOpen);
+  const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
 
   return (
     <aside
@@ -40,6 +41,14 @@ export function Sidebar({
             </span>
           </NavLink>
         </div>
+        <button
+          type="button"
+          className="app-sidebar__close-btn"
+          aria-label="إغلاق القائمة الجانبية"
+          onClick={() => setSidebarOpen(false)}
+        >
+          <X />
+        </button>
       </div>
 
       <nav className="app-sidebar__nav">
