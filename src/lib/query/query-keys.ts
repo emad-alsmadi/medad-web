@@ -19,6 +19,7 @@ export const queryKeys = {
     all: ['reportTypes'] as const,
     list: () => ['reportTypes', 'list'] as const,
     tree: () => ['reportTypes', 'tree'] as const,
+    roots: () => ['reportTypes', 'roots'] as const,
     detail: (id: number) => ['reportTypes', 'detail', id] as const,
     children: (id: number) => ['reportTypes', 'children', id] as const,
   },
@@ -26,5 +27,10 @@ export const queryKeys = {
     all: ['reports'] as const,
     list: (params?: Record<string, unknown>) => ['reports', 'list', params] as const,
     detail: (id: number) => ['reports', 'detail', id] as const,
+  },
+  reportTemplates: {
+    all: ['reportTemplates'] as const,
+    list: () => ['reportTemplates', 'list'] as const,
+    detail: (reportTypeId: number) => ['reportTemplates', 'detail', reportTypeId] as const,
   },
 } as const;

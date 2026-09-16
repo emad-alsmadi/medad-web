@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { ReportTypeForm } from '@/components/report-types/report-type-form';
 import { DeleteReportTypeDialog } from '@/components/report-types/delete-report-type-dialog';
+import { ReportTypeTemplateForm } from '@/components/report-types/report-type-template-form';
 import type { ReportTypeResponse } from '@/types/report-type';
 
 interface ReportTypeTableProps {
@@ -21,6 +22,7 @@ interface ReportTypeTableProps {
 export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
   const [editing, setEditing] = useState<ReportTypeResponse | null>(null);
   const [deleting, setDeleting] = useState<ReportTypeResponse | null>(null);
+  const [managingTemplate, setManagingTemplate] = useState<ReportTypeResponse | null>(null);
 
   if (types.length === 0) {
     return <p className="text-sm text-muted-foreground">لا توجد أنواع ضبوط.</p>;
@@ -37,7 +39,7 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
             <TableHead>الاسم</TableHead>
             <TableHead>عدد الشهود</TableHead>
             <TableHead>النوع الأب</TableHead>
-            {canManage && <TableHead className="text-end">الإجراءات</TableHead>}
+            <TableHead className="text-end">الإجراءات</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -48,16 +50,21 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
               <TableCell>
                 {type.parentId !== undefined ? (nameById.get(type.parentId) ?? '—') : '—'}
               </TableCell>
-              {canManage && (
-                <TableCell className="space-x-2 text-end rtl:space-x-reverse">
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(type)}>
-                    تعديل
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleting(type)}>
-                    حذف
-                  </Button>
-                </TableCell>
-              )}
+              <TableCell className="space-x-2 text-end rtl:space-x-reverse">
+                <Button variant="ghost" size="sm" onClick={() => setManagingTemplate(type)}>
+                  النموذج
+                </Button>
+                {canManage && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(type)}>
+                      تعديل
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => setDeleting(type)}>
+                      حذف
+                    </Button>
+                  </>
+                )}
+              </TableCell>
             </TableRow>
           ))}
         </TableBody>
@@ -75,6 +82,13 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
           reportType={deleting}
           open
           onOpenChange={(open) => !open && setDeleting(null)}
+        />
+      )}
+      {managingTemplate && (
+        <ReportTypeTemplateForm
+          reportType={managingTemplate}
+          open
+          onOpenChange={(open) => !open && setManagingTemplate(null)}
         />
       )}
     </>

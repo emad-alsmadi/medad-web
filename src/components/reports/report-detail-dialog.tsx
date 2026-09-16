@@ -1,7 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Printer, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { useReport } from '@/hooks/reports/use-report';
+import { useReportPdf } from '@/hooks/reports/use-report-mutations';
 import { useAuthContext } from '@/contexts/auth-context';
 import { DeleteReportDialog } from '@/components/reports/delete-report-dialog';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
@@ -30,30 +31,13 @@ export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetai
   const { data: report, isPending, isError } = useReport(reportId ?? Number.NaN);
   const { user } = useAuthContext();
   const [deleting, setDeleting] = useState(false);
+  const pdfMutation = useReportPdf();
 
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <div className="flex flex-row items-center justify-between gap-4">
-            <DialogTitle>{report ? `ضبط ${report.reportNumber}` : 'ضبط'}</DialogTitle>
-            {report && (
-              <div className="flex items-center gap-2 pe-6">
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={ROUTES.reports.edit(report.id)}>
-                    <Pencil />
-                    <span>تعديل</span>
-                  </Link>
-                </Button>
-                {user?.role === 'ADMIN' && (
-                  <Button variant="destructive" size="sm" onClick={() => setDeleting(true)}>
-                    <Trash2 />
-                    <span>حذف</span>
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
+          <DialogTitle>{report ? `ضبط ${report.reportNumber}` : 'ضبط'}</DialogTitle>
 
           {isPending && (
             <div className="space-y-2" aria-busy="true" aria-live="polite">
@@ -100,6 +84,32 @@ export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetai
                 ) : null,
               )}
             </dl>
+          )}
+
+          {report && (
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={pdfMutation.isPending}
+                onClick={() => pdfMutation.mutate(report.id)}
+              >
+                <Printer />
+                <span>{pdfMutation.isPending ? 'جاري التحضير…' : 'طباعة نموذج الضبط'}</span>
+              </Button>
+              <Button variant="outline" size="sm" asChild>
+                <Link to={ROUTES.reports.edit(report.id)}>
+                  <Pencil />
+                  <span>تعديل</span>
+                </Link>
+              </Button>
+              {user?.role === 'ADMIN' && (
+                <Button variant="destructive" size="sm" onClick={() => setDeleting(true)}>
+                  <Trash2 />
+                  <span>حذف</span>
+                </Button>
+              )}
+            </div>
           )}
         </DialogContent>
       </Dialog>

@@ -16,6 +16,11 @@ export interface ReportTypeTreeNode extends ReportTypeResponse {
   children: ReportTypeTreeNode[];
 }
 
+/** Shape returned by GET /report-types/roots: top-level types only, each with its child count. */
+export interface ReportTypeRoot extends ReportTypeResponse {
+  childrenCount: number;
+}
+
 export interface ReportTypeRequest {
   name: string;
   witnessNumber: number;

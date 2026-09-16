@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Eye, MoreVertical, Pencil, Trash2 } from 'lucide-react';
+import { Eye, MoreVertical, Pencil, Printer, Trash2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { DeleteReportDialog } from '@/components/reports/delete-report-dialog';
 import { ReportDetailDialog } from '@/components/reports/report-detail-dialog';
+import { useReportPdf } from '@/hooks/reports/use-report-mutations';
 import { useAuthContext } from '@/contexts/auth-context';
 import { ROUTES } from '@/constant/routes';
 import type { ReportResponse } from '@/types/report';
@@ -32,6 +33,7 @@ export function ReportsTable({ reports }: ReportsTableProps) {
   const canDelete = user?.role === 'ADMIN';
   const [deleteReport, setDeleteReport] = useState<ReportResponse | null>(null);
   const [detailReportId, setDetailReportId] = useState<number | null>(null);
+  const pdfMutation = useReportPdf();
 
   if (reports.length === 0) {
     return <p className="text-sm text-muted-foreground">لا توجد ضبوط.</p>;
@@ -82,6 +84,10 @@ export function ReportsTable({ reports }: ReportsTableProps) {
                         <Pencil />
                         <span>تعديل</span>
                       </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => pdfMutation.mutate(report.id)}>
+                      <Printer />
+                      <span>طباعة نموذج الضبط</span>
                     </DropdownMenuItem>
                     {canDelete && (
                       <DropdownMenuItem

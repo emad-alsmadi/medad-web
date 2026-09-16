@@ -85,10 +85,15 @@ export function UsersTable({ users }: UsersTableProps) {
                       <FileText />
                       <span>بيانات الضبط</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem variant="destructive" onSelect={() => setDeleteUser(user)}>
-                      <Trash2 />
-                      <span>حذف</span>
-                    </DropdownMenuItem>
+                    {user.role !== 'ADMIN' && (
+                      <DropdownMenuItem
+                        variant="destructive"
+                        onSelect={() => setDeleteUser(user)}
+                      >
+                        <Trash2 />
+                        <span>حذف</span>
+                      </DropdownMenuItem>
+                    )}
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>

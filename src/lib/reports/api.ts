@@ -32,3 +32,7 @@ export function update(id: number, body: ReportRequest): Promise<ReportResponse>
 export function remove(id: number): Promise<void> {
   return apiClient.delete<void>(`/reports/${id}`);
 }
+
+export function getPdf(id: number): Promise<Blob> {
+  return apiClient.getBlob(`/reports/${id}/pdf`);
+}

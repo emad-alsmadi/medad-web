@@ -93,11 +93,11 @@ async function refreshAccessToken(): Promise<string> {
   return data.token;
 }
 
-async function performFetch<TResponse>(path: string, options: RequestOptions): Promise<TResponse> {
+async function rawFetch(path: string, options: RequestOptions, accept: string): Promise<Response> {
   const token = readAccessToken();
 
   const headers = new Headers(options.headers);
-  headers.set('Accept', 'application/json');
+  headers.set('Accept', accept);
   if (options.body !== undefined) {
     headers.set('Content-Type', 'application/json');
   }
@@ -122,11 +122,22 @@ async function performFetch<TResponse>(path: string, options: RequestOptions): P
     throw new ApiError(`Request failed with status ${response.status}`, response.status, details);
   }
 
+  return response;
+}
+
+async function performFetch<TResponse>(path: string, options: RequestOptions): Promise<TResponse> {
+  const response = await rawFetch(path, options, 'application/json');
+
   if (response.status === 204) {
     return undefined as TResponse;
   }
 
   return (await response.json()) as TResponse;
+}
+
+async function performBlobFetch(path: string, options: RequestOptions): Promise<Blob> {
+  const response = await rawFetch(path, options, '*/*');
+  return response.blob();
 }
 
 /**
@@ -135,11 +146,15 @@ async function performFetch<TResponse>(path: string, options: RequestOptions): P
  * refresh-on-401 retry in one place — never call `fetch` directly from
  * feature code.
  */
-async function request<TResponse>(path: string, options: RequestOptions = {}): Promise<TResponse> {
+async function request<TResponse>(
+  path: string,
+  options: RequestOptions = {},
+  perform: (path: string, options: RequestOptions) => Promise<TResponse> = performFetch,
+): Promise<TResponse> {
   const isAuthPath = NO_REFRESH_PATHS.some((p) => path.startsWith(p));
 
   try {
-    return await performFetch<TResponse>(path, options);
+    return await perform(path, options);
   } catch (error) {
     const canRetry = !options._isRetry && !isAuthPath;
 
@@ -149,7 +164,7 @@ async function request<TResponse>(path: string, options: RequestOptions = {}): P
           refreshPromise = null;
         });
         await refreshPromise;
-        return await performFetch<TResponse>(path, { ...options, _isRetry: true });
+        return await perform(path, { ...options, _isRetry: true });
       } catch (retryError) {
         forceLogoutRedirect();
         throw retryError;
@@ -175,4 +190,7 @@ export const apiClient = {
     request<T>(path, { ...options, method: 'PATCH', body }),
   delete: <T>(path: string, options?: RequestOptions) =>
     request<T>(path, { ...options, method: 'DELETE' }),
+  /** For binary responses (e.g. PDF export) — bypasses JSON parsing. */
+  getBlob: (path: string, options?: RequestOptions) =>
+    request<Blob>(path, { ...options, method: 'GET' }, performBlobFetch),
 };

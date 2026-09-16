@@ -1,5 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { create, remove, update } from '@/lib/reports/api';
+import { create, getPdf, remove, update } from '@/lib/reports/api';
 import { queryKeys } from '@/lib/query/query-keys';
 import { notify } from '@/lib/notifications/toast';
 import { ApiError } from '@/lib/api/client';
@@ -49,6 +49,22 @@ export function useDeleteReport() {
         return;
       }
       notify.error('فشل حذف الضبط. يرجى المحاولة مرة أخرى.');
+    },
+  });
+}
+
+/** Opens the printable "ورقة ضبط" PDF for a report in a new tab. */
+export function useReportPdf() {
+  return useMutation({
+    mutationFn: getPdf,
+    onSuccess: (blob) => {
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      // Revoke after giving the new tab time to load the blob URL.
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    },
+    onError: () => {
+      notify.error('فشل تحميل نموذج الضبط. يرجى المحاولة مرة أخرى.');
     },
   });
 }

@@ -1,8 +1,13 @@
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import type { UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useReportTypes } from '@/hooks/report-types/use-report-types';
+import {
+  useReportTypeAncestorChain,
+  useReportTypeChildren,
+  useReportTypeRoots,
+} from '@/hooks/report-types/use-report-types';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Select } from '@/components/ui/select';
@@ -110,6 +115,169 @@ export function applyReportFormApiError(
   }
 }
 
+interface ReportTypeCascadeSelectProps {
+  /** The chosen leaf report type id, as a string (react-hook-form convention), or ''. */
+  value: string;
+  onChange: (id: string) => void;
+  error?: string;
+}
+
+/**
+ * Parent -> child cascading select for report types, driven by
+ * GET /report-types/roots (top-level types + child counts) and
+ * GET /report-types/{id}/children — fetched lazily per level instead of
+ * loading the whole tree up front. Renders one <Select> per level; picking
+ * a type with sub-types reveals another level underneath it, while picking
+ * a childless type commits it as the report's reportTypeId.
+ */
+function ReportTypeCascadeSelect({ value, onChange, error }: ReportTypeCascadeSelectProps) {
+  const { data: roots = [] } = useReportTypeRoots();
+  // Ids chosen at each level so far (root first).
+  const [levels, setLevels] = useState<string[]>(['']);
+  // Whether the type chosen at each level (same indices as `levels`) has sub-types of its own.
+  const [hasChildrenByLevel, setHasChildrenByLevel] = useState<boolean[]>([]);
+
+  // Resolve the ancestor chain for a pre-existing value (edit mode) so
+  // every level shows the right pre-selected option once loaded.
+  const leafId = value ? Number(value) : null;
+  const { data: ancestorChain } = useReportTypeAncestorChain(leafId);
+
+  useEffect(() => {
+    if (!ancestorChain) return;
+    const derived = ancestorChain.map((t) => String(t.id));
+    setLevels((current) =>
+      current.length === derived.length && current.every((v, i) => v === derived[i])
+        ? current
+        : derived,
+    );
+    // The leaf (last entry) is the only one we know for certain has no
+    // children; levels above it are ancestors and therefore always do.
+    setHasChildrenByLevel(derived.map((_, i) => i < derived.length - 1));
+  }, [ancestorChain]);
+
+  const rootSelected = levels[0] ?? '';
+  const rootNode = roots.find((t) => String(t.id) === rootSelected);
+  const rootHasChildren = (rootNode?.childrenCount ?? 0) > 0;
+
+  function selectRoot(id: string) {
+    setLevels([id]);
+    const node = roots.find((t) => String(t.id) === id);
+    const hasChildren = (node?.childrenCount ?? 0) > 0;
+    setHasChildrenByLevel([hasChildren]);
+    onChange(id && !hasChildren ? id : '');
+  }
+
+  /** Called by a child level once it knows whether `id` (its own selection) has further sub-types. */
+  function selectAt(levelIndex: number, id: string, hasChildren: boolean) {
+    const nextLevels = levels.slice(0, levelIndex + 1);
+    nextLevels[levelIndex] = id;
+    setLevels(nextLevels);
+    setHasChildrenByLevel((current) => {
+      const next = current.slice(0, levelIndex + 1);
+      next[levelIndex] = hasChildren;
+      return next;
+    });
+    onChange(id && !hasChildren ? id : '');
+  }
+
+  return (
+    <>
+      <FormField label="نوع الضبط الرئيسي" htmlFor="reportTypeLevel-0" error={error}>
+        <Select
+          id="reportTypeLevel-0"
+          aria-invalid={Boolean(error)}
+          value={rootSelected}
+          onChange={(e) => selectRoot(e.target.value)}
+        >
+          <option value="">اختر نوعًا</option>
+          {roots.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.name}
+            </option>
+          ))}
+        </Select>
+      </FormField>
+      {rootSelected && rootHasChildren && (
+        <ReportTypeCascadeChildLevel
+          levelIndex={1}
+          parentId={Number(rootSelected)}
+          selected={levels[1] ?? ''}
+          onSelect={(id, hasChildren) => selectAt(1, id, hasChildren)}
+        />
+      )}
+      {levels.slice(1).map((selected, i) => {
+        const levelIndex = i + 2;
+        const parentId = levels[levelIndex - 1];
+        const parentHasChildren = hasChildrenByLevel[levelIndex - 1];
+        if (!selected || !parentId || !parentHasChildren) return null;
+        return (
+          <ReportTypeCascadeChildLevel
+            key={`${parentId}-${levelIndex}`}
+            levelIndex={levelIndex}
+            parentId={Number(parentId)}
+            selected={levels[levelIndex] ?? ''}
+            onSelect={(id, hasChildren) => selectAt(levelIndex, id, hasChildren)}
+          />
+        );
+      })}
+    </>
+  );
+}
+
+interface ReportTypeCascadeChildLevelProps {
+  levelIndex: number;
+  parentId: number;
+  selected: string;
+  onSelect: (id: string, hasChildren: boolean) => void;
+}
+
+/**
+ * A non-root cascade level: fetches its own options via
+ * GET /report-types/{parentId}/children, and once the user picks one,
+ * fetches *that* type's children to decide whether to reveal another
+ * level (reported back to the parent via onSelect's hasChildren flag).
+ */
+function ReportTypeCascadeChildLevel({
+  levelIndex,
+  parentId,
+  selected,
+  onSelect,
+}: ReportTypeCascadeChildLevelProps) {
+  const { data: options = [] } = useReportTypeChildren(parentId);
+  const selectedId = selected ? Number(selected) : null;
+  const { data: grandchildren, isSuccess } = useReportTypeChildren(selectedId);
+
+  useEffect(() => {
+    if (selected && isSuccess) {
+      onSelect(selected, (grandchildren?.length ?? 0) > 0);
+    }
+    // Only re-run when the resolved grandchildren for the *current*
+    // selection change — onSelect is intentionally excluded to avoid a
+    // loop, since calling it can itself change `selected` via the parent.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, isSuccess, grandchildren]);
+
+  return (
+    <FormField
+      label={`نوع فرعي ${levelIndex > 1 ? levelIndex : ''}`.trim()}
+      htmlFor={`reportTypeLevel-${levelIndex}`}
+    >
+      <Select
+        id={`reportTypeLevel-${levelIndex}`}
+        value={selected}
+        onChange={(e) => onSelect(e.target.value, false)}
+      >
+        <option value="">اختر نوعًا</option>
+        {options.map((t) => (
+          <option key={t.id} value={t.id}>
+            {t.name}
+          </option>
+        ))}
+      </Select>
+    </FormField>
+  );
+}
+
 interface ReportFormFieldsProps {
   form: UseFormReturn<ReportFormValues>;
 }
@@ -121,8 +289,14 @@ interface ReportFormFieldsProps {
  * can render its own layout/actions around these fields.
  */
 export function ReportFormFields({ form }: ReportFormFieldsProps) {
-  const { register, setValue, getValues, formState: { errors } } = form;
-  const { data: types = [] } = useReportTypes();
+  const {
+    register,
+    setValue,
+    getValues,
+    watch,
+    formState: { errors },
+  } = form;
+  const reportTypeId = watch('reportTypeId');
 
   return (
     <>
@@ -135,20 +309,11 @@ export function ReportFormFields({ form }: ReportFormFieldsProps) {
             {...register('reportNumber')}
           />
         </FormField>
-        <FormField label="نوع الضبط" htmlFor="reportTypeId" error={errors.reportTypeId?.message}>
-          <Select
-            id="reportTypeId"
-            aria-invalid={Boolean(errors.reportTypeId)}
-            {...register('reportTypeId')}
-          >
-            <option value="">اختر نوعًا</option>
-            {types.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </Select>
-        </FormField>
+        <ReportTypeCascadeSelect
+          value={reportTypeId}
+          onChange={(id) => setValue('reportTypeId', id, { shouldValidate: true })}
+          error={errors.reportTypeId?.message}
+        />
         <FormField label="التاريخ" htmlFor="reportDate" error={errors.reportDate?.message}>
           <Input id="reportDate" type="date" {...register('reportDate')} />
         </FormField>
