@@ -5,8 +5,10 @@ import { AuthenticatedLayout } from '@/layouts/authenticated-layout';
 import { RequireAuth } from '@/components/auth/require-auth';
 import { RequireRole } from '@/components/auth/require-role';
 import { GuestOnlyRoute } from '@/components/auth/guest-only-route';
+import { HomeRedirect } from '@/components/auth/home-redirect';
 import { RouteFallback } from '@/components/common/route-fallback';
 import { ROUTES } from '@/constant/routes';
+import { FEATURES } from '@/constant/features';
 import {
   AdminDashboardPage,
   AdminUsersListPage,
@@ -16,7 +18,8 @@ import {
   ReportDetailPage,
   ReportFormPage,
   ReportsListPage,
-  ReportTypesListPage,
+  FormTypesListPage,
+  CrimeTypesListPage,
 } from '@/routes/lazy-pages';
 
 function withSuspense(element: React.ReactNode) {
@@ -52,7 +55,7 @@ export const routeConfig: RouteObject[] = [
           {
             element: <AuthenticatedLayout />,
             children: [
-              { path: ROUTES.home, element: <Navigate to={ROUTES.reports.list} replace /> },
+              { path: ROUTES.home, element: <HomeRedirect /> },
               { path: ROUTES.profile, element: withSuspense(<ProfilePage />) },
               { path: ROUTES.reports.list, element: withSuspense(<ReportsListPage />) },
               {
@@ -60,7 +63,16 @@ export const routeConfig: RouteObject[] = [
                 element: withSuspense(<ReportDetailPage />),
               },
               { path: ROUTES.reports.edit(':id'), element: withSuspense(<ReportFormPage />) },
-              { path: ROUTES.reportTypes.list, element: withSuspense(<ReportTypesListPage />) },
+              { path: ROUTES.formTypes.list, element: withSuspense(<FormTypesListPage />) },
+              {
+                path: ROUTES.formTypes.legacyList,
+                element: <Navigate to={ROUTES.formTypes.list} replace />,
+              },
+              { path: ROUTES.crimeTypes.list, element: withSuspense(<CrimeTypesListPage />) },
+              {
+                path: ROUTES.crimeTypes.legacyList,
+                element: <Navigate to={ROUTES.crimeTypes.list} replace />,
+              },
             ],
           },
         ],
@@ -72,7 +84,14 @@ export const routeConfig: RouteObject[] = [
             element: <AuthenticatedLayout />,
             children: [
               { path: ROUTES.admin.dashboard, element: withSuspense(<AdminDashboardPage />) },
-              { path: ROUTES.admin.users, element: withSuspense(<AdminUsersListPage />) },
+              {
+                path: ROUTES.admin.users,
+                element: FEATURES.usersPage ? (
+                  withSuspense(<AdminUsersListPage />)
+                ) : (
+                  <Navigate to={ROUTES.admin.dashboard} replace />
+                ),
+              },
             ],
           },
         ],

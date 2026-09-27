@@ -11,5 +11,6 @@ export interface ReportTemplateRequest {
 
 export interface ReportTemplateResponse extends ReportTemplateRequest {
   id: number;
-  reportTypeId: number;
+  formTypeId: number;
+  formTypeName: string;
 }

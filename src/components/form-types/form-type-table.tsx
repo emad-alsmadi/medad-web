@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FolderTree } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -9,40 +10,46 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { ReportTypeForm } from '@/components/report-types/report-type-form';
-import { DeleteReportTypeDialog } from '@/components/report-types/delete-report-type-dialog';
-import { ReportTypeTemplateForm } from '@/components/report-types/report-type-template-form';
-import type { ReportTypeResponse } from '@/types/report-type';
+import { EmptyState } from '@/components/shared/empty-state';
+import { FormTypeForm } from '@/components/form-types/form-type-form';
+import { DeleteFormTypeDialog } from '@/components/form-types/delete-form-type-dialog';
+import { FormTypeTemplateForm } from '@/components/form-types/form-type-template-form';
+import { isSelectableFormType } from '@/types/form-type';
+import type { FormTypeResponse } from '@/types/form-type';
 
-interface ReportTypeTableProps {
-  types: ReportTypeResponse[];
+interface FormTypeTableProps {
+  types: FormTypeResponse[];
   canManage: boolean;
 }
 
-export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
-  const [editing, setEditing] = useState<ReportTypeResponse | null>(null);
-  const [deleting, setDeleting] = useState<ReportTypeResponse | null>(null);
-  const [managingTemplate, setManagingTemplate] = useState<ReportTypeResponse | null>(null);
-
-  if (types.length === 0) {
-    return <p className="text-sm text-muted-foreground">لا توجد أنواع ضبوط.</p>;
-  }
+export function FormTypeTable({ types, canManage }: FormTypeTableProps) {
+  const [editing, setEditing] = useState<FormTypeResponse | null>(null);
+  const [deleting, setDeleting] = useState<FormTypeResponse | null>(null);
+  const [managingTemplate, setManagingTemplate] = useState<FormTypeResponse | null>(null);
 
   const nameById = new Map(types.map((t) => [t.id, t.name]));
 
   return (
     <>
       <Table>
-        <TableCaption className="sr-only">أنواع الضبوط</TableCaption>
+        <TableCaption className="sr-only">نماذج الضبوط</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>الاسم</TableHead>
             <TableHead>عدد الشهود</TableHead>
-            <TableHead>النوع الأب</TableHead>
+            <TableHead>التصنيف الأب</TableHead>
+            <TableHead>الفروع</TableHead>
             <TableHead className="text-end">الإجراءات</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
+          {types.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={5} className="p-0">
+                <EmptyState icon={FolderTree} title="لا توجد نماذج ضبوط" />
+              </TableCell>
+            </TableRow>
+          )}
           {types.map((type) => (
             <TableRow key={type.id}>
               <TableCell>{type.name}</TableCell>
@@ -50,10 +57,15 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
               <TableCell>
                 {type.parentId !== undefined ? (nameById.get(type.parentId) ?? '—') : '—'}
               </TableCell>
+              <TableCell className="text-muted-foreground">
+                {isSelectableFormType(type) ? '—' : `تصنيف (${type.childrenCount ?? 0})`}
+              </TableCell>
               <TableCell className="space-x-2 text-end rtl:space-x-reverse">
-                <Button variant="ghost" size="sm" onClick={() => setManagingTemplate(type)}>
-                  النموذج
-                </Button>
+                {isSelectableFormType(type) && (
+                  <Button variant="ghost" size="sm" onClick={() => setManagingTemplate(type)}>
+                    النص
+                  </Button>
+                )}
                 {canManage && (
                   <>
                     <Button variant="ghost" size="sm" onClick={() => setEditing(type)}>
@@ -71,22 +83,22 @@ export function ReportTypeTable({ types, canManage }: ReportTypeTableProps) {
       </Table>
 
       {editing && (
-        <ReportTypeForm
-          reportType={editing}
+        <FormTypeForm
+          formType={editing}
           open
           onOpenChange={(open) => !open && setEditing(null)}
         />
       )}
       {deleting && (
-        <DeleteReportTypeDialog
-          reportType={deleting}
+        <DeleteFormTypeDialog
+          formType={deleting}
           open
           onOpenChange={(open) => !open && setDeleting(null)}
         />
       )}
       {managingTemplate && (
-        <ReportTypeTemplateForm
-          reportType={managingTemplate}
+        <FormTypeTemplateForm
+          formType={managingTemplate}
           open
           onOpenChange={(open) => !open && setManagingTemplate(null)}
         />

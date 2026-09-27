@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -8,6 +8,12 @@ export function SidebarGroupItem({ group }: { group: SidebarGroup }) {
   const location = useLocation();
   const hasActiveChild = group.links.some((link) => location.pathname.startsWith(link.to));
   const [open, setOpen] = useState(hasActiveChild);
+
+  // Also open when navigation lands on one of the group's pages after mount
+  // (a redirect, a link from elsewhere); closing it stays the user's choice.
+  useEffect(() => {
+    if (hasActiveChild) setOpen(true);
+  }, [hasActiveChild]);
 
   return (
     <div

@@ -1,27 +1,27 @@
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { useDeleteReportType } from '@/hooks/report-types/use-report-type-mutations';
-import type { ReportTypeResponse } from '@/types/report-type';
+import { useDeleteFormType } from '@/hooks/form-types/use-form-type-mutations';
+import type { FormTypeResponse } from '@/types/form-type';
 
-interface DeleteReportTypeDialogProps {
-  reportType: ReportTypeResponse;
+interface DeleteFormTypeDialogProps {
+  formType: FormTypeResponse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
-export function DeleteReportTypeDialog({
-  reportType,
+export function DeleteFormTypeDialog({
+  formType,
   open,
   onOpenChange,
-}: DeleteReportTypeDialogProps) {
-  const mutation = useDeleteReportType();
+}: DeleteFormTypeDialogProps) {
+  const mutation = useDeleteFormType();
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>حذف نوع الضبط</DialogTitle>
+        <DialogTitle>حذف نموذج الضبط</DialogTitle>
         <DialogDescription>
-          هل أنت متأكد من حذف <strong>{reportType.name}</strong>؟ لا يمكن التراجع عن هذا الإجراء.
+          هل أنت متأكد من حذف <strong>{formType.name}</strong>؟ لا يمكن التراجع عن هذا الإجراء.
         </DialogDescription>
         <div className="flex justify-end gap-2">
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
@@ -32,7 +32,7 @@ export function DeleteReportTypeDialog({
             variant="destructive"
             disabled={mutation.isPending}
             onClick={() =>
-              mutation.mutate(reportType.id, {
+              mutation.mutate(formType.id, {
                 onSuccess: () => onOpenChange(false),
               })
             }

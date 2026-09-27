@@ -55,7 +55,7 @@ export function Sidebar({
         {adminGroup && <SidebarLinkItem link={dashboardLink} />}
         <SidebarGroupItem group={reportsGroup} />
         <SidebarLinkItem link={profileLink} />
-        {adminGroup && <SidebarGroupItem group={adminGroup} />}
+        {adminGroup && adminGroup.links.length > 0 && <SidebarGroupItem group={adminGroup} />}
       </nav>
 
       <div className="app-sidebar__footer">

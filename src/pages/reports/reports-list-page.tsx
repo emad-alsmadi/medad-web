@@ -1,23 +1,55 @@
 import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus } from 'lucide-react';
+import { FileSpreadsheet, Plus, SearchX, TriangleAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useReports } from '@/hooks/reports/use-reports';
+import { useExportReports } from '@/hooks/reports/use-report-mutations';
 import { useDebouncedValue } from '@/hooks/shared/use-debounced-value';
 import { ReportsTable } from '@/components/reports/reports-table';
 import { ReportFilters } from '@/components/reports/report-filters';
 import { CreateReportDialog } from '@/components/reports/create-report-dialog';
 import { ReportDetailDialog } from '@/components/reports/report-detail-dialog';
+import { EmptyState } from '@/components/shared/empty-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { ReportListParams } from '@/types/report';
+import type { ReportListParams, ReportResult, ReportType } from '@/types/report';
+
+const REPORT_TYPES: readonly ReportType[] = [
+  'JUDICIAL',
+  'ADMINISTRATIVE',
+  'RESISTANCE',
+  'CRIMINAL',
+  'DETENTION_RELEASE',
+];
+const REPORT_RESULTS: readonly ReportResult[] = [
+  'CLOSED',
+  'UNDER_INVESTIGATION',
+  'FURTHER_INVESTIGATION',
+];
+
+function numberParam(params: URLSearchParams, name: string): number | undefined {
+  const raw = params.get(name);
+  if (raw === null || raw === '') return undefined;
+  const value = Number(raw);
+  return Number.isFinite(value) ? value : undefined;
+}
+
+/** Ignores an unknown enum value in the URL rather than sending it (the backend 400s). */
+function enumParam<T extends string>(params: URLSearchParams, name: string, allowed: readonly T[]) {
+  const raw = params.get(name);
+  return allowed.includes(raw as T) ? (raw as T) : undefined;
+}
 
 function paramsFromSearch(params: URLSearchParams): ReportListParams {
   return {
-    page: params.has('page') ? Number(params.get('page')) : 0,
-    typeId: params.has('typeId') ? Number(params.get('typeId')) : undefined,
+    page: numberParam(params, 'page') ?? 0,
+    // `typeId` is the pre-rename name, kept so old bookmarked links still filter.
+    formTypeId: numberParam(params, 'formTypeId') ?? numberParam(params, 'typeId'),
+    type: enumParam(params, 'type', REPORT_TYPES),
+    crimeTypeId: numberParam(params, 'crimeTypeId'),
+    result: enumParam(params, 'result', REPORT_RESULTS),
     creatorId: params.get('creatorId') ?? undefined,
     from: params.get('from') ?? undefined,
     to: params.get('to') ?? undefined,
@@ -28,7 +60,10 @@ function paramsFromSearch(params: URLSearchParams): ReportListParams {
 function searchFromParams(value: ReportListParams): URLSearchParams {
   const params = new URLSearchParams();
   if (value.page) params.set('page', String(value.page));
-  if (value.typeId !== undefined) params.set('typeId', String(value.typeId));
+  if (value.formTypeId !== undefined) params.set('formTypeId', String(value.formTypeId));
+  if (value.type) params.set('type', value.type);
+  if (value.crimeTypeId !== undefined) params.set('crimeTypeId', String(value.crimeTypeId));
+  if (value.result) params.set('result', value.result);
   if (value.creatorId) params.set('creatorId', value.creatorId);
   if (value.from) params.set('from', value.from);
   if (value.to) params.set('to', value.to);
@@ -39,7 +74,8 @@ function searchFromParams(value: ReportListParams): URLSearchParams {
 export function ReportsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = paramsFromSearch(searchParams);
-  const { data, isPending, isError, isFetching } = useReports(filters);
+  const { data, isPending, isError, isFetching, refetch } = useReports(filters);
+  const exportMutation = useExportReports();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const viewId = searchParams.has('view') ? Number(searchParams.get('view')) : null;
 
@@ -55,6 +91,12 @@ export function ReportsListPage() {
 
   const updateFilters = (value: ReportListParams) => setSearchParams(searchFromParams(value));
 
+  const exportCurrent = () => {
+    // Same filters as the list, without paging/sorting (the register is always by date, ascending).
+    const { formTypeId, type, crimeTypeId, result, creatorId, from, to } = filters;
+    exportMutation.mutate({ formTypeId, type, crimeTypeId, result, creatorId, from, to });
+  };
+
   const closeDetail = () => {
     const params = new URLSearchParams(searchParams);
     params.delete('view');
@@ -67,12 +109,24 @@ export function ReportsListPage() {
         <title>الضبوط</title>
       </Helmet>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
           <CardTitle>الضبوط</CardTitle>
-          <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-            <Plus />
-            <span>إنشاء ضبط</span>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={exportCurrent}
+              disabled={exportMutation.isPending || data?.totalElements === 0}
+              title="تصدير كل الضبوط المطابقة للفلاتر الحالية إلى ملف Excel"
+            >
+              <FileSpreadsheet />
+              <span>{exportMutation.isPending ? 'جاري التصدير…' : 'تصدير Excel'}</span>
+            </Button>
+            <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+              <Plus />
+              <span>إنشاء ضبط</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <ReportFilters
@@ -91,18 +145,24 @@ export function ReportsListPage() {
           )}
 
           {isError && (
-            <p role="alert" className="text-sm text-destructive">
-              فشل تحميل الضبوط. يرجى المحاولة مرة أخرى.
-            </p>
+            <EmptyState
+              icon={TriangleAlert}
+              variant="destructive"
+              title="فشل تحميل الضبوط"
+              description="حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى."
+              action={{ label: 'إعادة المحاولة', onClick: () => void refetch() }}
+            />
           )}
 
-          {data && (
+          {!isError && data && (
             <>
               <ReportsTable reports={filteredReports} />
               {debouncedSearch && filteredReports.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  لا توجد نتائج مطابقة في هذه الصفحة.
-                </p>
+                <EmptyState
+                  icon={SearchX}
+                  title="لا توجد نتائج"
+                  description="لا توجد نتائج مطابقة في هذه الصفحة."
+                />
               )}
               {!debouncedSearch && (
                 <Pagination

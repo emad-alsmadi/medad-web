@@ -1,12 +1,16 @@
-import type { ReportTypeTreeNode } from '@/types/report-type';
+import { FolderTree } from 'lucide-react';
+import { EmptyState } from '@/components/shared/empty-state';
+import type { FormTypeTreeNode } from '@/types/form-type';
 
-interface ReportTypeTreeProps {
-  nodes: ReportTypeTreeNode[];
+interface FormTypeTreeProps {
+  nodes: FormTypeTreeNode[];
+  root?: boolean;
 }
 
-export function ReportTypeTree({ nodes }: ReportTypeTreeProps) {
+export function FormTypeTree({ nodes, root = true }: FormTypeTreeProps) {
   if (nodes.length === 0) {
-    return <p className="text-sm text-muted-foreground">لا توجد أنواع ضبوط.</p>;
+    if (!root) return null;
+    return <EmptyState icon={FolderTree} title="لا توجد نماذج ضبوط" />;
   }
 
   return (
@@ -19,7 +23,7 @@ export function ReportTypeTree({ nodes }: ReportTypeTreeProps) {
           </div>
           {node.children.length > 0 && (
             <div className="ms-6 border-s ps-2">
-              <ReportTypeTree nodes={node.children} />
+              <FormTypeTree nodes={node.children} root={false} />
             </div>
           )}
         </li>

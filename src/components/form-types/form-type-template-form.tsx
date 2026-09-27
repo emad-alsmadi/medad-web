@@ -19,7 +19,7 @@ import {
 import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
 import type { ReportTemplateResponse } from '@/types/report-template';
-import type { ReportTypeResponse } from '@/types/report-type';
+import type { FormTypeResponse } from '@/types/form-type';
 
 const templateSchema = z.object({
   creator: z.string().optional(),
@@ -55,28 +55,28 @@ function templateToFormValues(template?: ReportTemplateResponse): TemplateFormVa
   };
 }
 
-interface ReportTypeTemplateFormProps {
-  reportType: ReportTypeResponse;
+interface FormTypeTemplateFormProps {
+  formType: FormTypeResponse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 /**
- * Manages the per-report-type template (نموذج الضبط): default text that
- * pre-fills a report's fields when that type is picked, plus a blank
- * printable PDF of the template. A report type has at most one template
+ * Manages a form type's template (the official ورقة ضبط text): default
+ * text that pre-fills a new report's fields when that type is picked, plus
+ * a blank printable PDF of the template. A form type has at most one template
  * (create and update both go through the same PUT — "save").
  */
-export function ReportTypeTemplateForm({
-  reportType,
+export function FormTypeTemplateForm({
+  formType,
   open,
   onOpenChange,
-}: ReportTypeTemplateFormProps) {
+}: FormTypeTemplateFormProps) {
   const { user } = useAuthContext();
   const canManage = user?.role === 'ADMIN';
-  const { data: template, isPending, isNotFound } = useReportTemplate(reportType.id);
-  const saveMutation = useSaveReportTemplate(reportType.id);
-  const deleteMutation = useDeleteReportTemplate(reportType.id);
+  const { data: template, isPending, isNotFound } = useReportTemplate(formType.id);
+  const saveMutation = useSaveReportTemplate(formType.id);
+  const deleteMutation = useDeleteReportTemplate(formType.id);
   const pdfMutation = useReportTemplatePdf();
   const [confirmingDelete, setConfirmingDelete] = useState(false);
 
@@ -106,9 +106,9 @@ export function ReportTypeTemplateForm({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogTitle>نموذج {reportType.name}</DialogTitle>
+        <DialogTitle>نص {formType.name}</DialogTitle>
         <DialogDescription>
-          نص افتراضي يُستخدم لتعبئة حقول أي ضبط جديد من نوع «{reportType.name}» تلقائيًا.
+          نص ورقة الضبط الرسمية، يُستخدم لتعبئة حقول أي ضبط جديد على «{formType.name}» تلقائيًا.
         </DialogDescription>
 
         {isPending && (
@@ -124,8 +124,8 @@ export function ReportTypeTemplateForm({
             {isNotFound && (
               <p className="text-sm text-muted-foreground">
                 {canManage
-                  ? 'لا يوجد نموذج لهذا النوع بعد. عبِّئ الحقول أدناه واحفظ لإنشائه.'
-                  : 'لا يوجد نموذج لهذا النوع بعد.'}
+                  ? 'لا يوجد نص لهذا النموذج بعد. عبِّئ الحقول أدناه واحفظ لإنشائه.'
+                  : 'لا يوجد نص لهذا النموذج بعد.'}
               </p>
             )}
 
@@ -153,7 +153,7 @@ export function ReportTypeTemplateForm({
                 variant="outline"
                 size="sm"
                 disabled={pdfMutation.isPending}
-                onClick={() => pdfMutation.mutate(reportType.id)}
+                onClick={() => pdfMutation.mutate(formType.id)}
               >
                 <Printer />
                 <span>{pdfMutation.isPending ? 'جاري التحضير…' : 'طباعة نموذج فارغ'}</span>
@@ -166,7 +166,7 @@ export function ReportTypeTemplateForm({
                   onClick={() => setConfirmingDelete(true)}
                 >
                   <Trash2 />
-                  <span>حذف النموذج</span>
+                  <span>حذف النص</span>
                 </Button>
               )}
               {canManage && (
@@ -181,9 +181,9 @@ export function ReportTypeTemplateForm({
         {confirmingDelete && (
           <Dialog open onOpenChange={setConfirmingDelete}>
             <DialogContent>
-              <DialogTitle>حذف نموذج الضبط</DialogTitle>
+              <DialogTitle>حذف نص النموذج</DialogTitle>
               <DialogDescription>
-                هل أنت متأكد من حذف نموذج «{reportType.name}»؟ لا يمكن التراجع عن هذا الإجراء.
+                هل أنت متأكد من حذف نص «{formType.name}»؟ لا يمكن التراجع عن هذا الإجراء.
               </DialogDescription>
               <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={() => setConfirmingDelete(false)}>

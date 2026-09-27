@@ -2,6 +2,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
+import { TriangleAlert } from 'lucide-react';
 import { useMe } from '@/hooks/users/use-me';
 import { useSetMyReportInfo } from '@/hooks/users/use-set-report-info';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +10,7 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EmptyState } from '@/components/shared/empty-state';
 import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
 import type { ReportInfo } from '@/types/user';
@@ -42,7 +44,7 @@ const FIELDS: { name: keyof ReportInfoFormValues; label: string }[] = [
  * those fields are shown read-only and only report-info is editable.
  */
 export function ProfilePage() {
-  const { data: user, isPending, isError } = useMe();
+  const { data: user, isPending, isError, refetch } = useMe();
 
   return (
     <>
@@ -64,12 +66,16 @@ export function ProfilePage() {
             )}
 
             {isError && (
-              <p role="alert" className="text-sm text-destructive">
-                فشل تحميل بيانات الملف الشخصي. يرجى المحاولة مرة أخرى.
-              </p>
+              <EmptyState
+                icon={TriangleAlert}
+                variant="destructive"
+                title="فشل تحميل بيانات الملف الشخصي"
+                description="حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى."
+                action={{ label: 'إعادة المحاولة', onClick: () => void refetch() }}
+              />
             )}
 
-            {user && (
+            {!isError && user && (
               <dl className="grid gap-3 sm:grid-cols-2">
                 <div>
                   <dt className="text-sm text-muted-foreground">الاسم الكامل</dt>
@@ -92,7 +98,7 @@ export function ProfilePage() {
           </CardContent>
         </Card>
 
-        {user && <ReportInfoCard reportInfo={user.reportInfo} />}
+        {!isError && user && <ReportInfoCard reportInfo={user.reportInfo} />}
       </div>
     </>
   );

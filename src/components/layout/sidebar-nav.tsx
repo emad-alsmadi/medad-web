@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
-import { FileText, FolderTree, LayoutDashboard, User, Users } from 'lucide-react';
+import { FileText, FolderTree, Gavel, LayoutDashboard, User, Users } from 'lucide-react';
 import { ROUTES } from '@/constant/routes';
+import { FEATURES } from '@/constant/features';
 
 export interface SidebarLink {
   to: string;
@@ -34,12 +35,15 @@ export const reportsGroup: SidebarGroup = {
   icon: <FileText />,
   links: [
     { to: ROUTES.reports.list, label: 'كل الضبوط', icon: <FileText />, end: true },
-    { to: ROUTES.reportTypes.list, label: 'أنواع الضبوط', icon: <FolderTree /> },
+    { to: ROUTES.formTypes.list, label: 'نماذج الضبوط', icon: <FolderTree /> },
+    { to: ROUTES.crimeTypes.list, label: 'أنواع الجرم', icon: <Gavel />, end: true },
   ],
 };
 
 export const adminGroup: SidebarGroup = {
   label: 'إدارة النظام',
   icon: <Users />,
-  links: [{ to: ROUTES.admin.users, label: 'المستخدمون', icon: <Users />, end: true }],
+  links: FEATURES.usersPage
+    ? [{ to: ROUTES.admin.users, label: 'المستخدمون', icon: <Users />, end: true }]
+    : [],
 };

@@ -5,21 +5,21 @@ export function list(): Promise<ReportTemplateResponse[]> {
   return apiClient.get<ReportTemplateResponse[]>('/report-templates');
 }
 
-export function get(reportTypeId: number): Promise<ReportTemplateResponse> {
-  return apiClient.get<ReportTemplateResponse>(`/report-types/${reportTypeId}/template`);
+export function get(formTypeId: number): Promise<ReportTemplateResponse> {
+  return apiClient.get<ReportTemplateResponse>(`/form-types/${formTypeId}/template`);
 }
 
 export function save(
-  reportTypeId: number,
+  formTypeId: number,
   body: ReportTemplateRequest,
 ): Promise<ReportTemplateResponse> {
-  return apiClient.put<ReportTemplateResponse>(`/report-types/${reportTypeId}/template`, body);
+  return apiClient.put<ReportTemplateResponse>(`/form-types/${formTypeId}/template`, body);
 }
 
-export function remove(reportTypeId: number): Promise<void> {
-  return apiClient.delete<void>(`/report-types/${reportTypeId}/template`);
+export function remove(formTypeId: number): Promise<void> {
+  return apiClient.delete<void>(`/form-types/${formTypeId}/template`);
 }
 
-export function getPdf(reportTypeId: number): Promise<Blob> {
-  return apiClient.getBlob(`/report-types/${reportTypeId}/template/pdf`);
+export function getPdf(formTypeId: number): Promise<Blob> {
+  return apiClient.getBlob(`/form-types/${formTypeId}/template/pdf`);
 }

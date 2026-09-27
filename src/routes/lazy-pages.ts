@@ -20,9 +20,15 @@ export const AdminDashboardPage = lazy(() =>
   import('@/pages/admin/dashboard/dashboard-page').then((m) => ({ default: m.DashboardPage })),
 );
 
-export const ReportTypesListPage = lazy(() =>
-  import('@/pages/report-types/report-types-list-page').then((m) => ({
-    default: m.ReportTypesListPage,
+export const CrimeTypesListPage = lazy(() =>
+  import('@/pages/crime-types/crime-types-list-page').then((m) => ({
+    default: m.CrimeTypesListPage,
+  })),
+);
+
+export const FormTypesListPage = lazy(() =>
+  import('@/pages/form-types/form-types-list-page').then((m) => ({
+    default: m.FormTypesListPage,
   })),
 );
 

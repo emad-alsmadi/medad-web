@@ -40,6 +40,8 @@ export function DeleteReportDialog({
                   onOpenChange(false);
                   onDeleted?.();
                 },
+                // Sealed meanwhile (409, toasted by the hook): nothing left to confirm.
+                onError: () => onOpenChange(false),
               })
             }
           >

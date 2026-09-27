@@ -109,7 +109,6 @@ async function rawFetch(path: string, options: RequestOptions, accept: string): 
     ...options,
     headers,
     body: options.body !== undefined ? JSON.stringify(options.body) : undefined,
-    credentials: 'include',
   });
 
   if (!response.ok) {

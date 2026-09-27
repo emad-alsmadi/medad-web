@@ -5,7 +5,7 @@ import type { ReportInfo, UserResponse } from '@/types/user';
 /**
  * Pure API functions — no react-query, no caching logic. hooks/users
  * wraps these with useQuery/useMutation. Never import this directly from
- * a component. `/users` is a plain array, not paginated.
+ * a component. `/users` is a plain array (`List<UserResponse>`), not paginated.
  */
 export function list(): Promise<UserResponse[]> {
   return apiClient.get<UserResponse[]>('/users');

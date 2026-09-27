@@ -10,8 +10,15 @@ export const ROUTES = {
     dashboard: '/admin/dashboard',
     users: '/admin/users',
   },
-  reportTypes: {
-    list: '/report-types',
+  crimeTypes: {
+    list: '/crime-types',
+    /** Former admin-only path, redirected to crimeTypes.list for old bookmarks. */
+    legacyList: '/admin/crime-types',
+  },
+  formTypes: {
+    list: '/form-types',
+    /** Pre-rename path, redirected to formTypes.list for old bookmarks. */
+    legacyList: '/report-types',
   },
   reports: {
     list: '/reports',

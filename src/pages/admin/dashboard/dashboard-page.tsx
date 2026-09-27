@@ -1,20 +1,35 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { FileText, FolderTree, TrendingUp, Users } from 'lucide-react';
+import { MotionConfig, motion } from 'framer-motion';
+import { FileText, FolderTree, TrendingUp, TriangleAlert, Users } from 'lucide-react';
 import { useReports } from '@/hooks/reports/use-reports';
-import { useReportTypes } from '@/hooks/report-types/use-report-types';
+import { useReportStatistics } from '@/hooks/reports/use-report-statistics';
+import { useReportOptions } from '@/hooks/reports/use-report-options';
+import { useFormTypes } from '@/hooks/form-types/use-form-types';
 import { useUsers } from '@/hooks/users/use-users';
 import { StatCard } from '@/components/admin/dashboard/stat-card';
-import { ReportsByTypeChart, type TypeCount } from '@/components/admin/dashboard/reports-by-type-chart';
-import { ReportsTrendChart, type MonthCount } from '@/components/admin/dashboard/reports-trend-chart';
+import {
+  ReportsTrendChart,
+  type MonthCount,
+} from '@/components/admin/dashboard/reports-trend-chart';
 import { RecentReportsTable } from '@/components/admin/dashboard/recent-reports-table';
 import { DashboardSkeleton } from '@/components/admin/dashboard/dashboard-skeleton';
+import { ReportStatisticsPanel } from '@/components/admin/dashboard/report-statistics-panel';
+import { StatisticsRangePicker } from '@/components/admin/dashboard/statistics-range-picker';
+import { EmptyState } from '@/components/shared/empty-state';
+import { AnimatedNumber } from '@/components/shared/animated-number';
+import { riseIn, staggerChildren } from '@/motion/variants';
+import { Skeleton } from '@/components/ui/skeleton';
+import { isSelectableFormType } from '@/types/form-type';
+import type { StatisticsRange } from '@/types/report-statistics';
 
 const TREND_MONTHS = 6;
 const RECENT_REPORTS_COUNT = 8;
-const TOP_TYPES_COUNT = 6;
 
-const MONTH_LABEL_FORMAT = new Intl.DateTimeFormat('ar-SY', { month: 'short', year: '2-digit' });
+const MONTH_LABEL_FORMAT = new Intl.DateTimeFormat('ar-SY-u-nu-latn', {
+  month: 'short',
+  year: '2-digit',
+});
 
 function buildLastMonths(count: number): { key: string; label: string }[] {
   const months: { key: string; label: string }[] = [];
@@ -29,29 +44,27 @@ function buildLastMonths(count: number): { key: string; label: string }[] {
 
 export function DashboardPage() {
   const reportsQuery = useReports({ size: 500, sort: 'reportDate,desc' });
-  const reportTypesQuery = useReportTypes();
+  const formTypesQuery = useFormTypes();
   const usersQuery = useUsers();
 
-  const isPending = reportsQuery.isPending || reportTypesQuery.isPending || usersQuery.isPending;
-  const isError = reportsQuery.isError || reportTypesQuery.isError || usersQuery.isError;
+  const [statsRange, setStatsRange] = useState<StatisticsRange>({});
+  const statsQuery = useReportStatistics(statsRange);
+  const { labels } = useReportOptions();
+
+  const isPending = reportsQuery.isPending || formTypesQuery.isPending || usersQuery.isPending;
+  const isError = reportsQuery.isError || formTypesQuery.isError || usersQuery.isError;
+
+  const refetchAll = () => {
+    void reportsQuery.refetch();
+    void formTypesQuery.refetch();
+    void usersQuery.refetch();
+  };
 
   const reportsData = reportsQuery.data?.content;
   const reports = useMemo(() => reportsData ?? [], [reportsData]);
   const totalReports = reportsQuery.data?.totalElements ?? 0;
-  const totalTypes = reportTypesQuery.data?.length ?? 0;
+  const totalFormTypes = (formTypesQuery.data ?? []).filter(isSelectableFormType).length;
   const totalUsers = usersQuery.data?.length ?? 0;
-
-  const typeCounts = useMemo<TypeCount[]>(() => {
-    const counts = new Map<string, number>();
-    for (const report of reports) {
-      const name = report.reportType.name;
-      counts.set(name, (counts.get(name) ?? 0) + 1);
-    }
-    return Array.from(counts.entries())
-      .map(([name, count]) => ({ name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, TOP_TYPES_COUNT);
-  }, [reports]);
 
   const trend = useMemo<MonthCount[]>(() => {
     const months = buildLastMonths(TREND_MONTHS);
@@ -79,60 +92,122 @@ export function DashboardPage() {
         <title>نظرة عامة · الإدارة</title>
       </Helmet>
 
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-xl font-bold">نظرة عامة</h1>
-          <p className="text-sm text-muted-foreground">
-            ملخص عام لحالة النظام: الضبوط، الأنواع، والمستخدمون.
-          </p>
-        </div>
+      <MotionConfig reducedMotion="user">
+        <motion.div
+          className="space-y-6"
+          initial="hidden"
+          animate="visible"
+          variants={staggerChildren}
+        >
+          <motion.div variants={riseIn}>
+            <h1 className="text-xl font-bold">نظرة عامة</h1>
+            <p className="text-sm text-muted-foreground">
+              ملخص عام لحالة النظام: الضبوط، النماذج، والمستخدمون.
+            </p>
+          </motion.div>
 
-        {isPending && <DashboardSkeleton />}
+          {isPending && <DashboardSkeleton />}
 
-        {isError && (
-          <p role="alert" className="text-sm text-destructive">
-            فشل تحميل بيانات لوحة التحكم. يرجى المحاولة مرة أخرى.
-          </p>
-        )}
+          {isError && (
+            <EmptyState
+              icon={TriangleAlert}
+              variant="destructive"
+              title="فشل تحميل بيانات لوحة التحكم"
+              description="حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى."
+              action={{ label: 'إعادة المحاولة', onClick: refetchAll }}
+            />
+          )}
 
-        {!isPending && !isError && (
-          <>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <StatCard
-                label="إجمالي الضبوط"
-                value={totalReports.toLocaleString('ar-SY')}
-                icon={<FileText />}
-                accent="forest"
-              />
-              <StatCard
-                label="ضبوط هذا الشهر"
-                value={reportsThisMonth.toLocaleString('ar-SY')}
-                icon={<TrendingUp />}
-                accent="gold"
-              />
-              <StatCard
-                label="أنواع الضبوط"
-                value={totalTypes.toLocaleString('ar-SY')}
-                icon={<FolderTree />}
-                accent="umber"
-              />
-              <StatCard
-                label="المستخدمون"
-                value={totalUsers.toLocaleString('ar-SY')}
-                icon={<Users />}
-                accent="forest"
-              />
+          {!isPending && !isError && (
+            <>
+              <motion.div
+                className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+                initial="hidden"
+                animate="visible"
+                variants={staggerChildren}
+              >
+                <StatCard
+                  label="إجمالي الضبوط"
+                  value={<AnimatedNumber value={totalReports} />}
+                  icon={<FileText />}
+                  accent="forest"
+                />
+                <StatCard
+                  label="ضبوط هذا الشهر"
+                  value={<AnimatedNumber value={reportsThisMonth} />}
+                  icon={<TrendingUp />}
+                  accent="gold"
+                />
+                <StatCard
+                  label="نماذج الضبوط"
+                  value={<AnimatedNumber value={totalFormTypes} />}
+                  icon={<FolderTree />}
+                  accent="umber"
+                />
+                <StatCard
+                  label="المستخدمون"
+                  value={<AnimatedNumber value={totalUsers} />}
+                  icon={<Users />}
+                  accent="forest"
+                />
+              </motion.div>
+
+              <motion.div
+                className="grid grid-cols-1 gap-4 lg:grid-cols-2"
+                initial="hidden"
+                animate="visible"
+                variants={riseIn}
+              >
+                <ReportsTrendChart data={trend} />
+                <RecentReportsTable reports={recentReports} />
+              </motion.div>
+            </>
+          )}
+
+          <motion.section
+            className="space-y-4"
+            aria-labelledby="statistics-heading"
+            variants={riseIn}
+          >
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h2 id="statistics-heading" className="text-lg font-bold">
+                  الإحصائيات
+                </h2>
+                <p className="text-sm text-muted-foreground">
+                  حسب تاريخ الضبط. اضغط أي خانة لعرض ضبوطها.
+                </p>
+              </div>
+              <StatisticsRangePicker value={statsRange} onChange={setStatsRange} />
             </div>
 
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-              <ReportsTrendChart data={trend} />
-              <ReportsByTypeChart data={typeCounts} />
-            </div>
+            {statsQuery.isPending && (
+              <div className="space-y-4" aria-busy="true" aria-live="polite">
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-64 w-full" />
+              </div>
+            )}
 
-            <RecentReportsTable reports={recentReports} />
-          </>
-        )}
-      </div>
+            {statsQuery.isError && (
+              <EmptyState
+                icon={TriangleAlert}
+                variant="destructive"
+                title="فشل تحميل الإحصائيات"
+                description="تأكد من أن تاريخ البداية لا يأتي بعد تاريخ النهاية، ثم أعد المحاولة."
+                action={{ label: 'إعادة المحاولة', onClick: () => void statsQuery.refetch() }}
+              />
+            )}
+
+            {statsQuery.data && !statsQuery.isError && (
+              <ReportStatisticsPanel
+                stats={statsQuery.data}
+                range={statsRange}
+                resultLabel={labels.result}
+              />
+            )}
+          </motion.section>
+        </motion.div>
+      </MotionConfig>
     </>
   );
 }

@@ -4,15 +4,15 @@ import { get } from '@/lib/report-templates/api';
 import { ApiError } from '@/lib/api/client';
 
 /**
- * A report type may not have a template configured yet — the backend
+ * A form type may not have a template configured yet — the backend
  * returns 404 in that case, which callers should treat as "no template"
  * rather than a query error (see isNotFound below).
  */
-export function useReportTemplate(reportTypeId: number) {
+export function useReportTemplate(formTypeId: number) {
   const query = useQuery({
-    queryKey: queryKeys.reportTemplates.detail(reportTypeId),
-    queryFn: () => get(reportTypeId),
-    enabled: Number.isFinite(reportTypeId),
+    queryKey: queryKeys.reportTemplates.detail(formTypeId),
+    queryFn: () => get(formTypeId),
+    enabled: Number.isFinite(formTypeId),
   });
 
   const isNotFound = query.error instanceof ApiError && query.error.status === 404;

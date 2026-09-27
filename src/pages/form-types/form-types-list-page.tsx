@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus } from 'lucide-react';
-import { useReportTypes, useReportTypesTree } from '@/hooks/report-types/use-report-types';
+import { Plus, TriangleAlert } from 'lucide-react';
+import { useFormTypes, useFormTypesTree } from '@/hooks/form-types/use-form-types';
 import { useClientPagination } from '@/hooks/shared/use-client-pagination';
 import { useAuthContext } from '@/contexts/auth-context';
-import { ReportTypeTable } from '@/components/report-types/report-type-table';
-import { ReportTypeTree } from '@/components/report-types/report-type-tree';
-import { ReportTypeForm } from '@/components/report-types/report-type-form';
+import { FormTypeTable } from '@/components/form-types/form-type-table';
+import { FormTypeTree } from '@/components/form-types/form-type-tree';
+import { FormTypeForm } from '@/components/form-types/form-type-form';
+import { EmptyState } from '@/components/shared/empty-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Pagination } from '@/components/ui/pagination';
@@ -15,7 +16,7 @@ import { cn } from '@/lib/utils/cn';
 
 type ViewMode = 'list' | 'tree';
 
-export function ReportTypesListPage() {
+export function FormTypesListPage() {
   const { user } = useAuthContext();
   const canManage = user?.role === 'ADMIN';
   const [creating, setCreating] = useState(false);
@@ -24,11 +25,11 @@ export function ReportTypesListPage() {
   return (
     <>
       <Helmet>
-        <title>أنواع الضبوط</title>
+        <title>نماذج الضبوط</title>
       </Helmet>
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
-          <CardTitle>أنواع الضبوط</CardTitle>
+          <CardTitle>نماذج الضبوط</CardTitle>
           <div className="flex items-center gap-2">
             <div className="flex items-center rounded-md border border-border-subtle p-0.5">
               <Button
@@ -51,27 +52,27 @@ export function ReportTypesListPage() {
             {canManage && (
               <Button size="sm" onClick={() => setCreating(true)}>
                 <Plus />
-                <span>نوع جديد</span>
+                <span>نموذج جديد</span>
               </Button>
             )}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {view === 'list' ? (
-            <ReportTypesListView canManage={canManage} />
+            <FormTypesListView canManage={canManage} />
           ) : (
-            <ReportTypesTreeView />
+            <FormTypesTreeView />
           )}
         </CardContent>
       </Card>
 
-      {creating && <ReportTypeForm open onOpenChange={setCreating} />}
+      {creating && <FormTypeForm open onOpenChange={setCreating} />}
     </>
   );
 }
 
-function ReportTypesListView({ canManage }: { canManage: boolean }) {
-  const { data, isPending, isError } = useReportTypes();
+function FormTypesListView({ canManage }: { canManage: boolean }) {
+  const { data, isPending, isError, refetch } = useFormTypes();
   const { page, totalPages, pageItems, setPage } = useClientPagination(data ?? []);
 
   if (isPending) {
@@ -86,22 +87,26 @@ function ReportTypesListView({ canManage }: { canManage: boolean }) {
 
   if (isError) {
     return (
-      <p role="alert" className="text-sm text-destructive">
-        فشل تحميل أنواع الضبوط. يرجى المحاولة مرة أخرى.
-      </p>
+      <EmptyState
+        icon={TriangleAlert}
+        variant="destructive"
+        title="فشل تحميل نماذج الضبوط"
+        description="حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى."
+        action={{ label: 'إعادة المحاولة', onClick: () => void refetch() }}
+      />
     );
   }
 
   return (
     <>
-      <ReportTypeTable types={pageItems} canManage={canManage} />
+      <FormTypeTable types={pageItems} canManage={canManage} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </>
   );
 }
 
-function ReportTypesTreeView() {
-  const { data, isPending, isError } = useReportTypesTree();
+function FormTypesTreeView() {
+  const { data, isPending, isError, refetch } = useFormTypesTree();
 
   if (isPending) {
     return (
@@ -115,11 +120,15 @@ function ReportTypesTreeView() {
 
   if (isError) {
     return (
-      <p role="alert" className="text-sm text-destructive">
-        فشل تحميل أنواع الضبوط. يرجى المحاولة مرة أخرى.
-      </p>
+      <EmptyState
+        icon={TriangleAlert}
+        variant="destructive"
+        title="فشل تحميل نماذج الضبوط"
+        description="حدث خطأ أثناء تحميل البيانات. يرجى المحاولة مرة أخرى."
+        action={{ label: 'إعادة المحاولة', onClick: () => void refetch() }}
+      />
     );
   }
 
-  return <ReportTypeTree nodes={data ?? []} />;
+  return <FormTypeTree nodes={data ?? []} />;
 }

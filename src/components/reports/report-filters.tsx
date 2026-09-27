@@ -1,16 +1,24 @@
-import { Search } from 'lucide-react';
-import { useReportTypes } from '@/hooks/report-types/use-report-types';
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import { ChevronDown, FilterX, Search, SlidersHorizontal } from 'lucide-react';
+import { useFormTypes } from '@/hooks/form-types/use-form-types';
+import { useCrimeTypes } from '@/hooks/crime-types/use-crime-types';
+import { useReportOptions } from '@/hooks/reports/use-report-options';
 import { useUsers } from '@/hooks/users/use-users';
 import {
   DropdownSelect,
   DropdownSelectContent,
+  DropdownSelectGroup,
   DropdownSelectItem,
+  DropdownSelectLabel,
   DropdownSelectTrigger,
   DropdownSelectValue,
 } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { cn } from '@/lib/utils/cn';
+import { isSelectableFormType } from '@/types/form-type';
 import type { ReportListParams } from '@/types/report';
 
 interface ReportFiltersProps {
@@ -20,131 +28,260 @@ interface ReportFiltersProps {
   onSearchChange: (value: string) => void;
 }
 
-const ALL_TYPES = 'all';
-const ALL_CREATORS = 'all';
+/** Radix Select reserves '' — this stands for "no filter". */
+const ALL = 'all';
 const DEFAULT_SORT = 'reportDate,desc';
+const ADVANCED_PANEL_ID = 'report-filters-advanced';
+const NUMBER_FORMAT = new Intl.NumberFormat('ar-SY-u-nu-latn');
 
+/** How many of the filters hidden behind "advanced" are currently applied. */
+function countAdvanced(value: ReportListParams): number {
+  return [
+    value.crimeTypeId !== undefined,
+    Boolean(value.creatorId),
+    Boolean(value.from),
+    Boolean(value.to),
+    Boolean(value.sort && value.sort !== DEFAULT_SORT),
+  ].filter(Boolean).length;
+}
+
+interface FilterSelectProps {
+  id: string;
+  label: string;
+  value: string | undefined;
+  allLabel: string;
+  onChange: (value: string | undefined) => void;
+  children: ReactNode;
+}
+
+function FilterSelect({ id, label, value, allLabel, onChange, children }: FilterSelectProps) {
+  return (
+    <FormField label={label} htmlFor={id}>
+      <DropdownSelect
+        value={value ?? ALL}
+        onValueChange={(next) => onChange(next === ALL ? undefined : next)}
+      >
+        <DropdownSelectTrigger id={id}>
+          <DropdownSelectValue />
+        </DropdownSelectTrigger>
+        <DropdownSelectContent>
+          <DropdownSelectItem value={ALL}>{allLabel}</DropdownSelectItem>
+          {children}
+        </DropdownSelectContent>
+      </DropdownSelect>
+    </FormField>
+  );
+}
+
+/**
+ * The reports list filters: one row of the everyday filters followed by
+ * "clear" and an "advanced" toggle that reveals the rest underneath. The
+ * two buttons stay put at the end of the first row either way, and the
+ * toggle counts any advanced filters in force while they're hidden.
+ */
 export function ReportFilters({ value, onChange, search, onSearchChange }: ReportFiltersProps) {
-  const { data: types = [] } = useReportTypes();
+  const { data: formTypes = [] } = useFormTypes();
+  const { data: crimeTypes = [] } = useCrimeTypes();
+  const { data: options } = useReportOptions();
   const { data: users = [] } = useUsers();
 
+  const advancedCount = countAdvanced(value);
+  // Arriving with an advanced filter set (e.g. a link from the dashboard) shows it.
+  const [showAdvanced, setShowAdvanced] = useState(advancedCount > 0);
+
+  // The formTypeId filter matches that exact type only, so only leaf types
+  // (the ones reports are created on) are offered, grouped by their category.
+  const categories = formTypes.filter((t) => !isSelectableFormType(t));
+  const leavesByParent = (parentId: number) =>
+    formTypes.filter((t) => t.parentId === parentId && isSelectableFormType(t));
+  const rootLeaves = formTypes.filter((t) => t.parentId === undefined && isSelectableFormType(t));
+
+  const update = (patch: Partial<ReportListParams>) => onChange({ ...value, ...patch, page: 0 });
+  const toNumber = (next: string | undefined) => (next === undefined ? undefined : Number(next));
+
   const hasActiveFilters = Boolean(
-    search ||
-      value.typeId ||
-      value.creatorId ||
-      value.from ||
-      value.to ||
-      (value.sort && value.sort !== DEFAULT_SORT),
+    search || value.formTypeId !== undefined || value.type || value.result || advancedCount > 0,
   );
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
-      <FormField label="بحث برقم الضبط" htmlFor="filter-search">
-        <div className="relative">
-          <Search className="pointer-events-none absolute inset-y-0 end-3 my-auto h-4 w-4 text-muted-foreground" />
-          <Input
-            id="filter-search"
-            type="search"
-            placeholder="مثال: 2024-015"
-            value={search}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="pe-9"
-          />
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto_auto] lg:items-end">
+        <FormField label="بحث برقم الضبط" htmlFor="filter-search">
+          <div className="relative">
+            <Search className="pointer-events-none absolute inset-y-0 end-3 my-auto h-4 w-4 text-muted-foreground" />
+            <Input
+              id="filter-search"
+              type="search"
+              placeholder="مثال: 2026/114"
+              value={search}
+              onChange={(e) => onSearchChange(e.target.value)}
+              className="pe-9"
+            />
+          </div>
+        </FormField>
+        <FilterSelect
+          id="filter-type"
+          label="نوع الضبط"
+          allLabel="جميع الأنواع"
+          value={value.type}
+          onChange={(next) => update({ type: next as ReportListParams['type'] })}
+        >
+          {options?.types.map((o) => (
+            <DropdownSelectItem key={o.value} value={o.value}>
+              {o.label}
+            </DropdownSelectItem>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="filter-result"
+          label="النتيجة"
+          allLabel="جميع النتائج"
+          value={value.result}
+          onChange={(next) => update({ result: next as ReportListParams['result'] })}
+        >
+          {options?.results.map((o) => (
+            <DropdownSelectItem key={o.value} value={o.value}>
+              {o.label}
+            </DropdownSelectItem>
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="filter-form-type"
+          label="نموذج الضبط"
+          allLabel="جميع النماذج"
+          value={value.formTypeId !== undefined ? String(value.formTypeId) : undefined}
+          onChange={(next) => update({ formTypeId: toNumber(next) })}
+        >
+          {rootLeaves.map((t) => (
+            <DropdownSelectItem key={t.id} value={String(t.id)}>
+              {t.name}
+            </DropdownSelectItem>
+          ))}
+          {categories.map((category) => (
+            <DropdownSelectGroup key={category.id}>
+              <DropdownSelectLabel>{category.name}</DropdownSelectLabel>
+              {leavesByParent(category.id).map((t) => (
+                <DropdownSelectItem key={t.id} value={String(t.id)}>
+                  {t.name}
+                </DropdownSelectItem>
+              ))}
+            </DropdownSelectGroup>
+          ))}
+        </FilterSelect>
+
+        {/* Side by side under the fields on small screens; the last two cells of the row on large ones. */}
+        <div className="flex gap-2 sm:col-span-2 lg:contents">
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-[42px] flex-1 lg:flex-none"
+            onClick={() => {
+              onSearchChange('');
+              onChange({ page: 0 });
+            }}
+            disabled={!hasActiveFilters}
+          >
+            <FilterX />
+            <span>مسح الفلاتر</span>
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            className={cn(
+              'h-[42px] flex-1 lg:flex-none',
+              showAdvanced && 'border-primary/40 bg-primary/5 text-primary',
+            )}
+            aria-expanded={showAdvanced}
+            aria-controls={ADVANCED_PANEL_ID}
+            onClick={() => setShowAdvanced((open) => !open)}
+          >
+            <SlidersHorizontal />
+            <span>فلاتر متقدمة</span>
+            {!showAdvanced && advancedCount > 0 && (
+              <span
+                className="flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1.5 text-xs text-primary-foreground"
+                aria-label={`${NUMBER_FORMAT.format(advancedCount)} مفعّلة`}
+              >
+                {NUMBER_FORMAT.format(advancedCount)}
+              </span>
+            )}
+            <ChevronDown
+              className={cn('transition-transform duration-syid', showAdvanced && 'rotate-180')}
+              aria-hidden="true"
+            />
+          </Button>
         </div>
-      </FormField>
-      <FormField label="النوع" htmlFor="filter-type">
-        <DropdownSelect
-          value={value.typeId !== undefined ? String(value.typeId) : ALL_TYPES}
-          onValueChange={(next) =>
-            onChange({
-              ...value,
-              typeId: next === ALL_TYPES ? undefined : Number(next),
-              page: 0,
-            })
-          }
+      </div>
+
+      <div
+        id={ADVANCED_PANEL_ID}
+        hidden={!showAdvanced}
+        // The class too: a `grid` utility would otherwise override the hidden attribute.
+        className={cn(
+          'grid grid-cols-1 gap-3 border-t border-border-subtle pt-4 sm:grid-cols-2 lg:grid-cols-5',
+          !showAdvanced && 'hidden',
+        )}
+      >
+        <FilterSelect
+          id="filter-crime-type"
+          label="نوع الجرم"
+          allLabel="جميع الجرائم"
+          value={value.crimeTypeId !== undefined ? String(value.crimeTypeId) : undefined}
+          onChange={(next) => update({ crimeTypeId: toNumber(next) })}
         >
-          <DropdownSelectTrigger id="filter-type">
-            <DropdownSelectValue />
-          </DropdownSelectTrigger>
-          <DropdownSelectContent>
-            <DropdownSelectItem value={ALL_TYPES}>جميع الأنواع</DropdownSelectItem>
-            {types.map((t) => (
-              <DropdownSelectItem key={t.id} value={String(t.id)}>
-                {t.name}
-              </DropdownSelectItem>
-            ))}
-          </DropdownSelectContent>
-        </DropdownSelect>
-      </FormField>
-      <FormField label="المُنشئ" htmlFor="filter-creator">
-        <DropdownSelect
-          value={value.creatorId ?? ALL_CREATORS}
-          onValueChange={(next) =>
-            onChange({ ...value, creatorId: next === ALL_CREATORS ? undefined : next, page: 0 })
-          }
-        >
-          <DropdownSelectTrigger id="filter-creator">
-            <DropdownSelectValue />
-          </DropdownSelectTrigger>
-          <DropdownSelectContent>
-            <DropdownSelectItem value={ALL_CREATORS}>جميع المستخدمين</DropdownSelectItem>
-            {users.map((u) => (
-              <DropdownSelectItem key={u.id} value={u.id}>
-                {u.fullName}
-              </DropdownSelectItem>
-            ))}
-          </DropdownSelectContent>
-        </DropdownSelect>
-      </FormField>
-      <FormField label="من" htmlFor="filter-from">
-        <Input
-          id="filter-from"
-          type="date"
-          value={value.from ?? ''}
-          onChange={(e) => onChange({ ...value, from: e.target.value || undefined, page: 0 })}
-        />
-      </FormField>
-      <FormField label="إلى" htmlFor="filter-to">
-        <Input
-          id="filter-to"
-          type="date"
-          value={value.to ?? ''}
-          onChange={(e) => onChange({ ...value, to: e.target.value || undefined, page: 0 })}
-        />
-      </FormField>
-      <FormField label="الترتيب" htmlFor="filter-sort">
-        <DropdownSelect
-          value={value.sort ?? DEFAULT_SORT}
-          onValueChange={(next) => onChange({ ...value, sort: next, page: 0 })}
-        >
-          <DropdownSelectTrigger id="filter-sort">
-            <DropdownSelectValue />
-          </DropdownSelectTrigger>
-          <DropdownSelectContent>
-            <DropdownSelectItem value="reportDate,desc">التاريخ (الأحدث أولاً)</DropdownSelectItem>
-            <DropdownSelectItem value="reportDate,asc">التاريخ (الأقدم أولاً)</DropdownSelectItem>
-            <DropdownSelectItem value="reportNumber,asc">
-              رقم الضبط (تصاعدي)
+          {crimeTypes.map((c) => (
+            <DropdownSelectItem key={c.id} value={String(c.id)}>
+              {c.name}
             </DropdownSelectItem>
-            <DropdownSelectItem value="reportNumber,desc">
-              رقم الضبط (تنازلي)
-            </DropdownSelectItem>
-          </DropdownSelectContent>
-        </DropdownSelect>
-      </FormField>
-      <div className="flex items-end">
-        <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={() => {
-            onSearchChange('');
-            onChange({ page: 0 });
-          }}
-          disabled={!hasActiveFilters}
+          ))}
+        </FilterSelect>
+        <FilterSelect
+          id="filter-creator"
+          label="المُنشئ"
+          allLabel="جميع المستخدمين"
+          value={value.creatorId}
+          onChange={(next) => update({ creatorId: next })}
         >
-          مسح الفلاتر
-        </Button>
+          {users.map((u) => (
+            <DropdownSelectItem key={u.id} value={String(u.id)}>
+              {u.fullName}
+            </DropdownSelectItem>
+          ))}
+        </FilterSelect>
+        <FormField label="من تاريخ" htmlFor="filter-from">
+          <Input
+            id="filter-from"
+            type="date"
+            value={value.from ?? ''}
+            max={value.to}
+            onChange={(e) => update({ from: e.target.value || undefined })}
+          />
+        </FormField>
+        <FormField label="إلى تاريخ" htmlFor="filter-to">
+          <Input
+            id="filter-to"
+            type="date"
+            value={value.to ?? ''}
+            min={value.from}
+            onChange={(e) => update({ to: e.target.value || undefined })}
+          />
+        </FormField>
+        <FormField label="الترتيب" htmlFor="filter-sort">
+          <DropdownSelect
+            value={value.sort ?? DEFAULT_SORT}
+            onValueChange={(next) => update({ sort: next })}
+          >
+            <DropdownSelectTrigger id="filter-sort">
+              <DropdownSelectValue />
+            </DropdownSelectTrigger>
+            <DropdownSelectContent>
+              <DropdownSelectItem value="reportDate,desc">التاريخ (الأحدث أولاً)</DropdownSelectItem>
+              <DropdownSelectItem value="reportDate,asc">التاريخ (الأقدم أولاً)</DropdownSelectItem>
+              <DropdownSelectItem value="reportNumber,asc">رقم الضبط (تصاعدي)</DropdownSelectItem>
+              <DropdownSelectItem value="reportNumber,desc">رقم الضبط (تنازلي)</DropdownSelectItem>
+            </DropdownSelectContent>
+          </DropdownSelect>
+        </FormField>
       </div>
     </div>
   );

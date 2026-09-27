@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, MoreVertical, Trash2 } from 'lucide-react';
+import { FileText, MoreVertical, Trash2, Users } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -16,6 +16,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { EmptyState } from '@/components/shared/empty-state';
 import { ReportInfoDialog } from '@/components/admin/users/report-info-dialog';
 import { DeleteUserDialog } from '@/components/admin/users/delete-user-dialog';
 import type { UserResponse } from '@/types/user';
@@ -38,10 +39,6 @@ export function UsersTable({ users }: UsersTableProps) {
   const [reportInfoUser, setReportInfoUser] = useState<UserResponse | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserResponse | null>(null);
 
-  if (users.length === 0) {
-    return <p className="text-sm text-muted-foreground">لا يوجد مستخدمون.</p>;
-  }
-
   return (
     <>
       <Table>
@@ -57,6 +54,13 @@ export function UsersTable({ users }: UsersTableProps) {
           </TableRow>
         </TableHeader>
         <TableBody>
+          {users.length === 0 && (
+            <TableRow>
+              <TableCell colSpan={6} className="p-0">
+                <EmptyState icon={Users} title="لا يوجد مستخدمون" />
+              </TableCell>
+            </TableRow>
+          )}
           {users.map((user) => (
             <TableRow key={user.id}>
               <TableCell>{user.fullName}</TableCell>

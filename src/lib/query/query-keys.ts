@@ -15,22 +15,29 @@ export const queryKeys = {
     detail: (id: string) => ['users', 'detail', id] as const,
     me: ['users', 'me'] as const,
   },
-  reportTypes: {
-    all: ['reportTypes'] as const,
-    list: () => ['reportTypes', 'list'] as const,
-    tree: () => ['reportTypes', 'tree'] as const,
-    roots: () => ['reportTypes', 'roots'] as const,
-    detail: (id: number) => ['reportTypes', 'detail', id] as const,
-    children: (id: number) => ['reportTypes', 'children', id] as const,
+  formTypes: {
+    all: ['formTypes'] as const,
+    list: () => ['formTypes', 'list'] as const,
+    tree: () => ['formTypes', 'tree'] as const,
+    roots: () => ['formTypes', 'roots'] as const,
+    detail: (id: number) => ['formTypes', 'detail', id] as const,
+    children: (id: number) => ['formTypes', 'children', id] as const,
+    ancestorChain: (id: number) => ['formTypes', 'ancestorChain', id] as const,
+  },
+  crimeTypes: {
+    all: ['crimeTypes'] as const,
+    list: () => ['crimeTypes', 'list'] as const,
   },
   reports: {
     all: ['reports'] as const,
     list: (params?: Record<string, unknown>) => ['reports', 'list', params] as const,
     detail: (id: number) => ['reports', 'detail', id] as const,
+    options: () => ['reports', 'options'] as const,
+    statistics: (range?: Record<string, unknown>) => ['reports', 'statistics', range] as const,
   },
   reportTemplates: {
     all: ['reportTemplates'] as const,
     list: () => ['reportTemplates', 'list'] as const,
-    detail: (reportTypeId: number) => ['reportTemplates', 'detail', reportTypeId] as const,
+    detail: (formTypeId: number) => ['reportTemplates', 'detail', formTypeId] as const,
   },
 } as const;

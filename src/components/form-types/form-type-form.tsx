@@ -12,34 +12,34 @@ import {
   DropdownSelectValue,
 } from '@/components/ui/dropdown-select';
 import { Button } from '@/components/ui/button';
-import { useReportTypes } from '@/hooks/report-types/use-report-types';
+import { useFormTypes } from '@/hooks/form-types/use-form-types';
 import {
-  useCreateReportType,
-  useUpdateReportType,
-} from '@/hooks/report-types/use-report-type-mutations';
+  useCreateFormType,
+  useUpdateFormType,
+} from '@/hooks/form-types/use-form-type-mutations';
 import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
-import type { ReportTypeResponse } from '@/types/report-type';
+import type { FormTypeResponse } from '@/types/form-type';
 
-const reportTypeSchema = z.object({
+const formTypeSchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب').max(100, 'يجب ألا يتجاوز 100 حرف'),
   witnessNumber: z.coerce.number().int('يجب أن يكون رقمًا صحيحًا').min(0, 'يجب أن يكون 0 أو أكبر'),
   parentId: z.string(),
 });
 
-type ReportTypeFormValues = z.infer<typeof reportTypeSchema>;
+type FormTypeFormValues = z.infer<typeof formTypeSchema>;
 
 const ROOT_PARENT = 'root';
 
-interface ReportTypeFormProps {
+interface FormTypeFormProps {
   /** When provided, the form edits this type; otherwise it creates a new one. */
-  reportType?: ReportTypeResponse;
+  formType?: FormTypeResponse;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
 
 /** All ids that are `type` itself or one of its descendants, per the flat list's parentId links. */
-function collectDescendantIds(types: ReportTypeResponse[], rootId: number): Set<number> {
+function collectDescendantIds(types: FormTypeResponse[], rootId: number): Set<number> {
   const ids = new Set<number>([rootId]);
   let added = true;
   while (added) {
@@ -54,11 +54,11 @@ function collectDescendantIds(types: ReportTypeResponse[], rootId: number): Set<
   return ids;
 }
 
-export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFormProps) {
-  const { data: types = [] } = useReportTypes();
-  const createMutation = useCreateReportType();
-  const updateMutation = useUpdateReportType(reportType?.id ?? -1);
-  const mutation = reportType ? updateMutation : createMutation;
+export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps) {
+  const { data: types = [] } = useFormTypes();
+  const createMutation = useCreateFormType();
+  const updateMutation = useUpdateFormType(formType?.id ?? -1);
+  const mutation = formType ? updateMutation : createMutation;
 
   const {
     register,
@@ -66,16 +66,16 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
     handleSubmit,
     setError,
     formState: { errors },
-  } = useForm<ReportTypeFormValues>({
-    resolver: zodResolver(reportTypeSchema),
+  } = useForm<FormTypeFormValues>({
+    resolver: zodResolver(formTypeSchema),
     values: {
-      name: reportType?.name ?? '',
-      witnessNumber: reportType?.witnessNumber ?? 0,
-      parentId: reportType?.parentId !== undefined ? String(reportType.parentId) : '',
+      name: formType?.name ?? '',
+      witnessNumber: formType?.witnessNumber ?? 0,
+      parentId: formType?.parentId !== undefined ? String(formType.parentId) : '',
     },
   });
 
-  const excludedIds = reportType ? collectDescendantIds(types, reportType.id) : new Set<number>();
+  const excludedIds = formType ? collectDescendantIds(types, formType.id) : new Set<number>();
   const parentOptions = types.filter((t) => !excludedIds.has(t.id));
 
   const onSubmit = handleSubmit((values) => {
@@ -91,7 +91,7 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
         if (error instanceof ApiError && error.status === 400) {
           const body = error.details as ApiErrorBody | undefined;
           Object.entries(body?.fieldErrors ?? {}).forEach(([field, message]) => {
-            setError(field as keyof ReportTypeFormValues, { message });
+            setError(field as keyof FormTypeFormValues, { message });
           });
         }
       },
@@ -101,7 +101,7 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
-        <DialogTitle>{reportType ? 'تعديل نوع الضبط' : 'نوع ضبط جديد'}</DialogTitle>
+        <DialogTitle>{formType ? 'تعديل نموذج الضبط' : 'نموذج ضبط جديد'}</DialogTitle>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           <FormField label="الاسم" htmlFor="name" error={errors.name?.message} required>
             <Input id="name" aria-invalid={Boolean(errors.name)} {...register('name')} />
@@ -120,7 +120,7 @@ export function ReportTypeForm({ reportType, open, onOpenChange }: ReportTypeFor
               {...register('witnessNumber')}
             />
           </FormField>
-          <FormField label="النوع الأب" htmlFor="parentId" error={errors.parentId?.message}>
+          <FormField label="التصنيف الأب" htmlFor="parentId" error={errors.parentId?.message}>
             <Controller
               control={control}
               name="parentId"
