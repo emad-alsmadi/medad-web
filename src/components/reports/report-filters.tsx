@@ -5,6 +5,7 @@ import { useFormTypes } from '@/hooks/form-types/use-form-types';
 import { useCrimeTypes } from '@/hooks/crime-types/use-crime-types';
 import { useReportOptions } from '@/hooks/reports/use-report-options';
 import { useUsers } from '@/hooks/users/use-users';
+import { useCan } from '@/hooks/auth/use-can';
 import {
   DropdownSelect,
   DropdownSelectContent,
@@ -15,6 +16,7 @@ import {
   DropdownSelectValue,
 } from '@/components/ui/dropdown-select';
 import { Input } from '@/components/ui/input';
+import { DateInput } from '@/components/ui/date-input';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
 import { cn } from '@/lib/utils/cn';
@@ -38,7 +40,7 @@ const NUMBER_FORMAT = new Intl.NumberFormat('ar-SY-u-nu-latn');
 function countAdvanced(value: ReportListParams): number {
   return [
     value.crimeTypeId !== undefined,
-    Boolean(value.creatorId),
+    value.creatorId !== undefined,
     Boolean(value.from),
     Boolean(value.to),
     Boolean(value.sort && value.sort !== DEFAULT_SORT),
@@ -80,10 +82,14 @@ function FilterSelect({ id, label, value, allLabel, onChange, children }: Filter
  * toggle counts any advanced filters in force while they're hidden.
  */
 export function ReportFilters({ value, onChange, search, onSearchChange }: ReportFiltersProps) {
-  const { data: formTypes = [] } = useFormTypes();
-  const { data: crimeTypes = [] } = useCrimeTypes();
+  const can = useCan();
+  const canViewFormTypes = can('FORM_TYPES', 'VIEW');
+  const canViewCrimeTypes = can('CRIME_TYPES', 'VIEW');
+  const canViewUsers = can('USERS', 'VIEW');
+  const { data: formTypes = [] } = useFormTypes({ enabled: canViewFormTypes });
+  const { data: crimeTypes = [] } = useCrimeTypes({ enabled: canViewCrimeTypes });
   const { data: options } = useReportOptions();
-  const { data: users = [] } = useUsers();
+  const { data: users = [] } = useUsers({ enabled: canViewUsers });
 
   const advancedCount = countAdvanced(value);
   // Arriving with an advanced filter set (e.g. a link from the dashboard) shows it.
@@ -145,29 +151,31 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
             </DropdownSelectItem>
           ))}
         </FilterSelect>
-        <FilterSelect
-          id="filter-form-type"
-          label="نموذج الضبط"
-          allLabel="جميع النماذج"
-          value={value.formTypeId !== undefined ? String(value.formTypeId) : undefined}
-          onChange={(next) => update({ formTypeId: toNumber(next) })}
-        >
-          {rootLeaves.map((t) => (
-            <DropdownSelectItem key={t.id} value={String(t.id)}>
-              {t.name}
-            </DropdownSelectItem>
-          ))}
-          {categories.map((category) => (
-            <DropdownSelectGroup key={category.id}>
-              <DropdownSelectLabel>{category.name}</DropdownSelectLabel>
-              {leavesByParent(category.id).map((t) => (
-                <DropdownSelectItem key={t.id} value={String(t.id)}>
-                  {t.name}
-                </DropdownSelectItem>
-              ))}
-            </DropdownSelectGroup>
-          ))}
-        </FilterSelect>
+        {canViewFormTypes && (
+          <FilterSelect
+            id="filter-form-type"
+            label="نموذج الضبط"
+            allLabel="جميع النماذج"
+            value={value.formTypeId !== undefined ? String(value.formTypeId) : undefined}
+            onChange={(next) => update({ formTypeId: toNumber(next) })}
+          >
+            {rootLeaves.map((t) => (
+              <DropdownSelectItem key={t.id} value={String(t.id)}>
+                {t.name}
+              </DropdownSelectItem>
+            ))}
+            {categories.map((category) => (
+              <DropdownSelectGroup key={category.id}>
+                <DropdownSelectLabel>{category.name}</DropdownSelectLabel>
+                {leavesByParent(category.id).map((t) => (
+                  <DropdownSelectItem key={t.id} value={String(t.id)}>
+                    {t.name}
+                  </DropdownSelectItem>
+                ))}
+              </DropdownSelectGroup>
+            ))}
+          </FilterSelect>
+        )}
 
         {/* Side by side under the fields on small screens; the last two cells of the row on large ones. */}
         <div className="flex gap-2 sm:col-span-2 lg:contents">
@@ -222,48 +230,50 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
           !showAdvanced && 'hidden',
         )}
       >
-        <FilterSelect
-          id="filter-crime-type"
-          label="نوع الجرم"
-          allLabel="جميع الجرائم"
-          value={value.crimeTypeId !== undefined ? String(value.crimeTypeId) : undefined}
-          onChange={(next) => update({ crimeTypeId: toNumber(next) })}
-        >
-          {crimeTypes.map((c) => (
-            <DropdownSelectItem key={c.id} value={String(c.id)}>
-              {c.name}
-            </DropdownSelectItem>
-          ))}
-        </FilterSelect>
-        <FilterSelect
-          id="filter-creator"
-          label="المُنشئ"
-          allLabel="جميع المستخدمين"
-          value={value.creatorId}
-          onChange={(next) => update({ creatorId: next })}
-        >
-          {users.map((u) => (
-            <DropdownSelectItem key={u.id} value={String(u.id)}>
-              {u.fullName}
-            </DropdownSelectItem>
-          ))}
-        </FilterSelect>
+        {canViewCrimeTypes && (
+          <FilterSelect
+            id="filter-crime-type"
+            label="نوع الجرم"
+            allLabel="جميع الجرائم"
+            value={value.crimeTypeId !== undefined ? String(value.crimeTypeId) : undefined}
+            onChange={(next) => update({ crimeTypeId: toNumber(next) })}
+          >
+            {crimeTypes.map((c) => (
+              <DropdownSelectItem key={c.id} value={String(c.id)}>
+                {c.name}
+              </DropdownSelectItem>
+            ))}
+          </FilterSelect>
+        )}
+        {canViewUsers && (
+          <FilterSelect
+            id="filter-creator"
+            label="المُنشئ"
+            allLabel="جميع المستخدمين"
+            value={value.creatorId !== undefined ? String(value.creatorId) : undefined}
+            onChange={(next) => update({ creatorId: toNumber(next) })}
+          >
+            {users.map((u) => (
+              <DropdownSelectItem key={u.id} value={String(u.id)}>
+                {u.fullName}
+              </DropdownSelectItem>
+            ))}
+          </FilterSelect>
+        )}
         <FormField label="من تاريخ" htmlFor="filter-from">
-          <Input
+          <DateInput
             id="filter-from"
-            type="date"
             value={value.from ?? ''}
             max={value.to}
-            onChange={(e) => update({ from: e.target.value || undefined })}
+            onChange={(next) => update({ from: next || undefined })}
           />
         </FormField>
         <FormField label="إلى تاريخ" htmlFor="filter-to">
-          <Input
+          <DateInput
             id="filter-to"
-            type="date"
             value={value.to ?? ''}
             min={value.from}
-            onChange={(e) => update({ to: e.target.value || undefined })}
+            onChange={(next) => update({ to: next || undefined })}
           />
         </FormField>
         <FormField label="الترتيب" htmlFor="filter-sort">
@@ -275,7 +285,9 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
               <DropdownSelectValue />
             </DropdownSelectTrigger>
             <DropdownSelectContent>
-              <DropdownSelectItem value="reportDate,desc">التاريخ (الأحدث أولاً)</DropdownSelectItem>
+              <DropdownSelectItem value="reportDate,desc">
+                التاريخ (الأحدث أولاً)
+              </DropdownSelectItem>
               <DropdownSelectItem value="reportDate,asc">التاريخ (الأقدم أولاً)</DropdownSelectItem>
               <DropdownSelectItem value="reportNumber,asc">رقم الضبط (تصاعدي)</DropdownSelectItem>
               <DropdownSelectItem value="reportNumber,desc">رقم الضبط (تنازلي)</DropdownSelectItem>

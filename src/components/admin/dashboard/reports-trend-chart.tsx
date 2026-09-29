@@ -52,7 +52,7 @@ export function ReportsTrendChart({ data }: { data: MonthCount[] }) {
                   border: '1px solid var(--color-border-subtle)',
                   fontSize: 13,
                 }}
-                formatter={(value: number) => [value, 'عدد الضبوط']}
+                formatter={(value) => [value, 'عدد الضبوط']}
                 labelFormatter={(label) => label}
               />
               <Area

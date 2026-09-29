@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { DateInput } from '@/components/ui/date-input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils/cn';
 import type { StatisticsRange } from '@/types/report-statistics';
@@ -71,26 +71,24 @@ export function StatisticsRangePicker({ value, onChange }: StatisticsRangePicker
           <Label htmlFor="stats-from" className="text-xs">
             من
           </Label>
-          <Input
+          <DateInput
             id="stats-from"
-            type="date"
             className="h-9"
             value={value.from ?? ''}
             max={value.to}
-            onChange={(e) => onChange({ ...value, from: e.target.value || undefined })}
+            onChange={(next) => onChange({ ...value, from: next || undefined })}
           />
         </div>
         <div className="space-y-1">
           <Label htmlFor="stats-to" className="text-xs">
             إلى
           </Label>
-          <Input
+          <DateInput
             id="stats-to"
-            type="date"
             className="h-9"
             value={value.to ?? ''}
             min={value.from}
-            onChange={(e) => onChange({ ...value, to: e.target.value || undefined })}
+            onChange={(next) => onChange({ ...value, to: next || undefined })}
           />
         </div>
       </div>

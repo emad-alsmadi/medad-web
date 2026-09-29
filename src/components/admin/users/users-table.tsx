@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FileText, MoreVertical, Trash2, Users } from 'lucide-react';
+import { FileText, MoreVertical, ShieldCheck, Trash2, Users } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -10,6 +10,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,12 +20,12 @@ import {
 import { EmptyState } from '@/components/shared/empty-state';
 import { ReportInfoDialog } from '@/components/admin/users/report-info-dialog';
 import { DeleteUserDialog } from '@/components/admin/users/delete-user-dialog';
+import { ChangeRoleDialog } from '@/components/admin/users/change-role-dialog';
+import { useAuthContext } from '@/contexts/auth-context';
+import { useCan } from '@/hooks/auth/use-can';
+import { useSetUserEnabled } from '@/hooks/users/use-set-user-enabled';
+import { roleLabel } from '@/lib/auth/permissions';
 import type { UserResponse } from '@/types/user';
-
-const ROLE_LABELS: Record<UserResponse['role'], string> = {
-  ADMIN: 'مسؤول',
-  USER: 'مستخدم',
-};
 
 interface UsersTableProps {
   users: UserResponse[];
@@ -32,11 +33,19 @@ interface UsersTableProps {
 
 /**
  * Presentational shell + local dialog-open state only — mutations
- * themselves live in the dialogs via hooks/users. Consumed by
- * pages/admin/users.
+ * themselves live in the dialogs via hooks/users. Each action shows only
+ * with its permission, and none on the signed-in user's own row:
+ * disabling, deleting or demoting yourself would cut your own access.
  */
 export function UsersTable({ users }: UsersTableProps) {
+  const { user: me } = useAuthContext();
+  const can = useCan();
+  const canUpdate = can('USERS', 'UPDATE');
+  const canDelete = can('USERS', 'DELETE');
+  const canChangeRole = canUpdate && can('ROLES', 'VIEW');
+  const enabledMutation = useSetUserEnabled();
   const [reportInfoUser, setReportInfoUser] = useState<UserResponse | null>(null);
+  const [roleUser, setRoleUser] = useState<UserResponse | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserResponse | null>(null);
 
   return (
@@ -61,48 +70,91 @@ export function UsersTable({ users }: UsersTableProps) {
               </TableCell>
             </TableRow>
           )}
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.fullName}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>{ROLE_LABELS[user.role]}</TableCell>
-              <TableCell>{user.enabled ? 'نشط' : 'غير نشط'}</TableCell>
-              <TableCell>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0"
-                  onClick={() => setReportInfoUser(user)}
-                >
-                  {user.reportInfo ? 'تعديل' : 'غير محدد'}
-                </Button>
-              </TableCell>
-              <TableCell className="text-end">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" aria-label="إجراءات المستخدم">
-                      <MoreVertical className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onSelect={() => setReportInfoUser(user)}>
-                      <FileText />
-                      <span>بيانات الضبط</span>
-                    </DropdownMenuItem>
-                    {user.role !== 'ADMIN' && (
-                      <DropdownMenuItem
-                        variant="destructive"
-                        onSelect={() => setDeleteUser(user)}
-                      >
-                        <Trash2 />
-                        <span>حذف</span>
-                      </DropdownMenuItem>
+          {users.map((user) => {
+            const isSelf = user.id === me?.id;
+            const statusId = `user-status-${user.id}`;
+            const hasActions = !isSelf && (canUpdate || canDelete);
+            return (
+              <TableRow key={user.id}>
+                <TableCell>
+                  {user.fullName}
+                  {isSelf && <span className="ms-1.5 text-xs text-muted-foreground">(أنت)</span>}
+                </TableCell>
+                <TableCell>{user.email}</TableCell>
+                <TableCell>{roleLabel(user.role)}</TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-2">
+                    {canUpdate && !isSelf && (
+                      <Switch
+                        checked={user.enabled}
+                        aria-labelledby={statusId}
+                        disabled={enabledMutation.isPending}
+                        onCheckedChange={(enabled) =>
+                          enabledMutation.mutate({ id: user.id, enabled })
+                        }
+                      />
                     )}
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
+                    <span
+                      id={statusId}
+                      className={user.enabled ? undefined : 'text-muted-foreground'}
+                    >
+                      {user.enabled ? 'مفعّل' : 'معطّل'}
+                    </span>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  {canUpdate && !isSelf ? (
+                    <Button
+                      variant="link"
+                      size="sm"
+                      className="h-auto p-0"
+                      onClick={() => setReportInfoUser(user)}
+                    >
+                      {user.reportInfo ? 'تعديل' : 'غير محدد'}
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {user.reportInfo ? 'محددة' : 'غير محدد'}
+                    </span>
+                  )}
+                </TableCell>
+                <TableCell className="text-end">
+                  {hasActions && (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" aria-label="إجراءات المستخدم">
+                          <MoreVertical className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        {canChangeRole && (
+                          <DropdownMenuItem onSelect={() => setRoleUser(user)}>
+                            <ShieldCheck />
+                            <span>تغيير الدور</span>
+                          </DropdownMenuItem>
+                        )}
+                        {canUpdate && (
+                          <DropdownMenuItem onSelect={() => setReportInfoUser(user)}>
+                            <FileText />
+                            <span>بيانات الضبط</span>
+                          </DropdownMenuItem>
+                        )}
+                        {canDelete && (
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onSelect={() => setDeleteUser(user)}
+                          >
+                            <Trash2 />
+                            <span>حذف</span>
+                          </DropdownMenuItem>
+                        )}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )}
+                </TableCell>
+              </TableRow>
+            );
+          })}
         </TableBody>
       </Table>
 
@@ -111,6 +163,13 @@ export function UsersTable({ users }: UsersTableProps) {
           user={reportInfoUser}
           open
           onOpenChange={(open) => !open && setReportInfoUser(null)}
+        />
+      )}
+      {roleUser && (
+        <ChangeRoleDialog
+          user={roleUser}
+          open
+          onOpenChange={(open) => !open && setRoleUser(null)}
         />
       )}
       {deleteUser && (

@@ -5,9 +5,11 @@ import type { Control, UseFormReturn } from 'react-hook-form';
 import { Archive, FileText, Gavel, Info, ScrollText, Users } from 'lucide-react';
 import { useReportOptions } from '@/hooks/reports/use-report-options';
 import { useCrimeTypes } from '@/hooks/crime-types/use-crime-types';
+import { useCan } from '@/hooks/auth/use-can';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { DateInput } from '@/components/ui/date-input';
 import {
   DropdownSelect,
   DropdownSelectContent,
@@ -117,7 +119,6 @@ const CONFISCATION_FIELDS: { name: keyof ReportFormValues['confiscation']; label
   { name: 'drugs', label: 'المخدرات' },
   { name: 'money', label: 'المال' },
   { name: 'seizedItems', label: 'المحجوزات' },
-  { name: 'notes', label: 'الملاحظات' },
 ];
 
 /** A markup example in the formatting hint; <bdi> keeps its symbols in place inside Arabic text. */
@@ -217,11 +218,18 @@ interface CrimeTypeSelectProps {
   control: Control<ReportFormValues>;
   options: { value: string; label: string }[];
   error?: string;
+  /** Without CRIME_TYPES:VIEW the list can't be loaded, so the field is left as it is. */
+  disabled?: boolean;
 }
 
-function CrimeTypeSelect({ control, options, error }: CrimeTypeSelectProps) {
+function CrimeTypeSelect({ control, options, error, disabled }: CrimeTypeSelectProps) {
   return (
-    <FormField label="نوع الجرم" htmlFor="crimeTypeId" error={error}>
+    <FormField
+      label="نوع الجرم"
+      htmlFor="crimeTypeId"
+      error={error}
+      hint={disabled ? 'لا تملك صلاحية استعراض أنواع الجرم.' : undefined}
+    >
       <Controller
         control={control}
         name="crimeTypeId"
@@ -236,7 +244,11 @@ function CrimeTypeSelect({ control, options, error }: CrimeTypeSelectProps) {
               field.onChange(next === NONE ? '' : next);
             }}
           >
-            <DropdownSelectTrigger id="crimeTypeId" aria-invalid={Boolean(error)}>
+            <DropdownSelectTrigger
+              id="crimeTypeId"
+              aria-invalid={Boolean(error)}
+              disabled={disabled}
+            >
               <DropdownSelectValue />
             </DropdownSelectTrigger>
             <DropdownSelectContent>
@@ -305,7 +317,11 @@ function PartyFields({ form }: { form: UseFormReturn<ReportFormValues> }) {
             const error = errors[party.name]?.[name]?.message;
             return (
               <FormField key={name} label={label} htmlFor={id} error={error}>
-                <Input id={id} aria-invalid={Boolean(error)} {...register(`${party.name}.${name}`)} />
+                <Input
+                  id={id}
+                  aria-invalid={Boolean(error)}
+                  {...register(`${party.name}.${name}`)}
+                />
               </FormField>
             );
           })}
@@ -316,7 +332,13 @@ function PartyFields({ form }: { form: UseFormReturn<ReportFormValues> }) {
 }
 
 /** The five sheet texts, one under another, each with its own label and where it prints. */
-function SheetTextFields({ form, isEdit }: { form: UseFormReturn<ReportFormValues>; isEdit: boolean }) {
+function SheetTextFields({
+  form,
+  isEdit,
+}: {
+  form: UseFormReturn<ReportFormValues>;
+  isEdit: boolean;
+}) {
   const {
     control,
     setValue,
@@ -336,8 +358,8 @@ function SheetTextFields({ form, isEdit }: { form: UseFormReturn<ReportFormValue
           </p>
         )}
         <p className="text-xs leading-6 text-muted-foreground">
-          التنسيق: <Token># عنوان</Token> في بداية السطر لعنوان فرعي، <Token>&gt; نص</Token> لسطر
-          في المنتصف، <Token>**نص**</Token> للغامق، و<Token>@دور⇥دور</Token> لسطر التواقيع.
+          التنسيق: <Token># عنوان</Token> في بداية السطر لعنوان فرعي، <Token>&gt; نص</Token> لسطر في
+          المنتصف، <Token>**نص**</Token> للغامق، و<Token>@دور⇥دور</Token> لسطر التواقيع.
         </p>
       </div>
 
@@ -387,7 +409,9 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
     formState: { errors },
   } = form;
   const { data: options } = useReportOptions();
-  const { data: crimeTypes = [] } = useCrimeTypes();
+  const canViewCrimeTypes = useCan()('CRIME_TYPES', 'VIEW');
+  const { data: crimeTypes = [] } = useCrimeTypes({ enabled: canViewCrimeTypes });
+  const hasCrimeType = useWatch({ control, name: 'crimeTypeId' }) !== '';
   const [open, setOpen] = useState(INITIALLY_OPEN);
 
   const crimeTypeOptions = crimeTypes.map((c) => ({ value: String(c.id), label: c.name }));
@@ -475,8 +499,25 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                   {...register('reportNumber')}
                 />
               </FormField>
-              <FormField label="تاريخ الضبط" htmlFor="reportDate" error={errors.reportDate?.message}>
-                <Input id="reportDate" type="date" {...register('reportDate')} />
+              <FormField
+                label="تاريخ الضبط"
+                htmlFor="reportDate"
+                error={errors.reportDate?.message}
+                required
+              >
+                <Controller
+                  control={control}
+                  name="reportDate"
+                  render={({ field }) => (
+                    <DateInput
+                      id="reportDate"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      aria-invalid={Boolean(errors.reportDate)}
+                    />
+                  )}
+                />
               </FormField>
             </div>
             <ChipsField
@@ -518,16 +559,39 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                 control={control}
                 options={crimeTypeOptions}
                 error={errors.crimeTypeId?.message}
+                disabled={!canViewCrimeTypes}
               />
-              <FormField label="مكان الجرم" htmlFor="crimePlace" error={errors.crimePlace?.message}>
+              <FormField
+                label="مكان الجرم"
+                htmlFor="crimePlace"
+                error={errors.crimePlace?.message}
+                required={hasCrimeType}
+              >
                 <Input
                   id="crimePlace"
                   aria-invalid={Boolean(errors.crimePlace)}
                   {...register('crimePlace')}
                 />
               </FormField>
-              <FormField label="تاريخ الجرم" htmlFor="crimeDate" error={errors.crimeDate?.message}>
-                <Input id="crimeDate" type="date" {...register('crimeDate')} />
+              <FormField
+                label="تاريخ الجرم"
+                htmlFor="crimeDate"
+                error={errors.crimeDate?.message}
+                required={hasCrimeType}
+              >
+                <Controller
+                  control={control}
+                  name="crimeDate"
+                  render={({ field }) => (
+                    <DateInput
+                      id="crimeDate"
+                      value={field.value}
+                      onChange={field.onChange}
+                      onBlur={field.onBlur}
+                      aria-invalid={Boolean(errors.crimeDate)}
+                    />
+                  )}
+                />
               </FormField>
             </div>
             <div className="flex flex-wrap items-end gap-4">
@@ -578,6 +642,13 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                 ))}
               </div>
             </div>
+            <FormField label="الملاحظات" htmlFor="confiscation-notes">
+              <Textarea
+                id="confiscation-notes"
+                className="min-h-20"
+                {...register('confiscation.notes')}
+              />
+            </FormField>
           </div>
         </ReportFormSection>
 

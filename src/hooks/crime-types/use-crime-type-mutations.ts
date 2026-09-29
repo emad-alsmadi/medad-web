@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { create, remove, update } from '@/lib/crime-types/api';
 import { queryKeys } from '@/lib/query/query-keys';
 import { notify } from '@/lib/notifications/toast';
+import { failureMessage } from '@/lib/api/errors';
 import { ApiError } from '@/lib/api/client';
 
 function invalidateCrimeTypes(queryClient: ReturnType<typeof useQueryClient>) {
@@ -20,7 +21,7 @@ export function useCreateCrimeType() {
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) return;
-      notify.error('فشل إنشاء نوع الجرم. يرجى المحاولة مرة أخرى.');
+      notify.error(failureMessage(error, 'فشل إنشاء نوع الجرم. يرجى المحاولة مرة أخرى.'));
     },
   });
 }
@@ -38,7 +39,7 @@ export function useUpdateCrimeType(id: number) {
     },
     onError: (error) => {
       if (error instanceof ApiError && error.status === 409) return;
-      notify.error('فشل تحديث نوع الجرم. يرجى المحاولة مرة أخرى.');
+      notify.error(failureMessage(error, 'فشل تحديث نوع الجرم. يرجى المحاولة مرة أخرى.'));
     },
   });
 }
@@ -57,7 +58,7 @@ export function useDeleteCrimeType() {
         notify.error('لا يمكن الحذف: هناك ضبوط مرتبطة بهذا النوع.');
         return;
       }
-      notify.error('فشل حذف نوع الجرم. يرجى المحاولة مرة أخرى.');
+      notify.error(failureMessage(error, 'فشل حذف نوع الجرم. يرجى المحاولة مرة أخرى.'));
     },
   });
 }

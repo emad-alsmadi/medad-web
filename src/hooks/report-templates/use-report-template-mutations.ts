@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { getPdf, remove, save } from '@/lib/report-templates/api';
 import { queryKeys } from '@/lib/query/query-keys';
 import { notify } from '@/lib/notifications/toast';
+import { failureMessage } from '@/lib/api/errors';
 import { openBlob } from '@/lib/utils/download';
 
 function invalidateReportTemplate(
@@ -21,8 +22,8 @@ export function useSaveReportTemplate(formTypeId: number) {
       invalidateReportTemplate(queryClient, formTypeId);
       notify.success('تم حفظ نص النموذج.');
     },
-    onError: () => {
-      notify.error('فشل حفظ نص النموذج. يرجى المحاولة مرة أخرى.');
+    onError: (error) => {
+      notify.error(failureMessage(error, 'فشل حفظ نص النموذج. يرجى المحاولة مرة أخرى.'));
     },
   });
 }
@@ -36,8 +37,8 @@ export function useDeleteReportTemplate(formTypeId: number) {
       invalidateReportTemplate(queryClient, formTypeId);
       notify.success('تم حذف نص النموذج.');
     },
-    onError: () => {
-      notify.error('فشل حذف نص النموذج. يرجى المحاولة مرة أخرى.');
+    onError: (error) => {
+      notify.error(failureMessage(error, 'فشل حذف نص النموذج. يرجى المحاولة مرة أخرى.'));
     },
   });
 }
@@ -47,8 +48,8 @@ export function useReportTemplatePdf() {
   return useMutation({
     mutationFn: getPdf,
     onSuccess: openBlob,
-    onError: () => {
-      notify.error('فشل تحميل نموذج الضبط الفارغ. يرجى المحاولة مرة أخرى.');
+    onError: (error) => {
+      notify.error(failureMessage(error, 'فشل تحميل نموذج الضبط الفارغ. يرجى المحاولة مرة أخرى.'));
     },
   });
 }

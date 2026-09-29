@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { TriangleAlert, UserPlus } from 'lucide-react';
 import { useUsers } from '@/hooks/users/use-users';
+import { useCan } from '@/hooks/auth/use-can';
 import { useClientPagination } from '@/hooks/shared/use-client-pagination';
 import { UsersTable } from '@/components/admin/users/users-table';
 import { CreateUserDialog } from '@/components/admin/users/create-user-dialog';
@@ -21,6 +22,7 @@ export function UsersListPage() {
   const { data, isPending, isError, refetch } = useUsers();
   const { page, totalPages, pageItems, setPage } = useClientPagination(data ?? []);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const canCreate = useCan()('USERS', 'CREATE');
 
   return (
     <>
@@ -30,10 +32,12 @@ export function UsersListPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>المستخدمون</CardTitle>
-          <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-            <UserPlus />
-            <span>مستخدم جديد</span>
-          </Button>
+          {canCreate && (
+            <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+              <UserPlus />
+              <span>مستخدم جديد</span>
+            </Button>
+          )}
         </CardHeader>
         <CardContent className="space-y-4">
           {isPending && <UsersTableSkeleton />}
@@ -57,7 +61,7 @@ export function UsersListPage() {
         </CardContent>
       </Card>
 
-      <CreateUserDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />
+      {canCreate && <CreateUserDialog open={isCreateOpen} onOpenChange={setIsCreateOpen} />}
     </>
   );
 }

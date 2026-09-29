@@ -1,6 +1,5 @@
 import { apiClient } from '@/lib/api/client';
-import { register } from '@/lib/auth/api';
-import type { ReportInfo, UserResponse } from '@/types/user';
+import type { CreateUserRequest, ReportInfo, UserResponse } from '@/types/user';
 
 /**
  * Pure API functions — no react-query, no caching logic. hooks/users
@@ -11,31 +10,37 @@ export function list(): Promise<UserResponse[]> {
   return apiClient.get<UserResponse[]>('/users');
 }
 
-/**
- * There is no admin-only "create user" endpoint — the backend only
- * exposes POST /auth/register, which always assigns the USER role
- * server-side (role is never accepted from the client). Re-exported here
- * so the admin users feature can create accounts without importing
- * lib/auth directly.
- */
-export const create = register;
+/** Creates an account with a chosen role; `/auth/register` (lib/auth) always assigns «مستخدم». */
+export function create(body: CreateUserRequest): Promise<UserResponse> {
+  return apiClient.post<UserResponse>('/users', body);
+}
 
-export function get(id: string): Promise<UserResponse> {
+export function get(id: number): Promise<UserResponse> {
   return apiClient.get<UserResponse>(`/users/${id}`);
 }
 
+/** The signed-in user, the only response that carries `permissions`. */
 export function me(): Promise<UserResponse> {
   return apiClient.get<UserResponse>('/users/me');
+}
+
+export function setRole(id: number, roleId: number): Promise<UserResponse> {
+  return apiClient.put<UserResponse>(`/users/${id}/role`, { roleId });
+}
+
+/** A disabled account loses access at once, its current tokens included. */
+export function setEnabled(id: number, enabled: boolean): Promise<UserResponse> {
+  return apiClient.put<UserResponse>(`/users/${id}/enabled`, { enabled });
 }
 
 export function setMyReportInfo(body: ReportInfo): Promise<UserResponse> {
   return apiClient.put<UserResponse>('/users/me/report-info', body);
 }
 
-export function setReportInfo(id: string, body: ReportInfo): Promise<UserResponse> {
+export function setReportInfo(id: number, body: ReportInfo): Promise<UserResponse> {
   return apiClient.put<UserResponse>(`/users/${id}/report-info`, body);
 }
 
-export function remove(id: string): Promise<void> {
+export function remove(id: number): Promise<void> {
   return apiClient.delete<void>(`/users/${id}`);
 }

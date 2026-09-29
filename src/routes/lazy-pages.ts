@@ -47,3 +47,7 @@ export const ReportFormPage = lazy(() =>
 export const NotFoundPage = lazy(() =>
   import('@/pages/not-found/not-found-page').then((m) => ({ default: m.NotFoundPage })),
 );
+
+export const RolesListPage = lazy(() =>
+  import('@/pages/roles/roles-list-page').then((m) => ({ default: m.RolesListPage })),
+);

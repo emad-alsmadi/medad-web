@@ -4,8 +4,8 @@ import { me } from '@/lib/users/api';
 
 /**
  * GET /users/me — the full UserResponse (including reportInfo) for the
- * signed-in user. Distinct from useSession, which only exposes the
- * AuthUser fields persisted from the /auth/login response.
+ * signed-in user. useSession fetches the same endpoint and seeds this
+ * cache, so the profile page usually renders without a second request.
  */
 export function useMe() {
   return useQuery({

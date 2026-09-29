@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { ApiError } from '@/lib/api/client';
 import { isDuplicateReportNumberError } from '@/lib/reports/errors';
+import { toIsoDate } from '@/lib/utils/date';
 import type { ApiErrorBody } from '@/types/api';
 import type {
   ReportRequest,
@@ -31,29 +32,48 @@ const confiscationSchema = z.object({
   notes: z.string(),
 });
 
-export const reportSchema = z.object({
-  reportNumber: z.string().trim().min(1, 'رقم الضبط مطلوب').max(100, 'يجب ألا يتجاوز 100 حرف'),
-  reportDate: z.string(),
-  type: z.string().min(1, 'نوع الضبط مطلوب'),
-  formTypeId: z.string().min(1, 'اختر نموذج ضبط فرعيًا'),
-  result: z.string().min(1, 'النتيجة مطلوبة'),
-  crimeTypeId: z.string(),
-  searchBroadcast: z.string(),
-  prosecutionPermission: z.boolean(),
-  discovered: z.boolean(),
-  plaintiff: partySchema,
-  defendant: partySchema,
-  crimePlace: z.string().max(255, 'يجب ألا يتجاوز 255 حرفًا'),
-  crimeDate: z.string(),
-  actionTaken: z.string(),
-  confiscation: confiscationSchema,
-  // No length limit on the backend: the official templates' referral alone runs well past 100 chars.
-  introduction: z.string(),
-  body: z.string(),
-  referral: z.string(),
-  conclusion: z.string(),
-  summary: z.string(),
-});
+export const reportSchema = z
+  .object({
+    reportNumber: z.string().trim().min(1, 'رقم الضبط مطلوب').max(100, 'يجب ألا يتجاوز 100 حرف'),
+    reportDate: z.string().min(1, 'تاريخ الضبط مطلوب'),
+    type: z.string().min(1, 'نوع الضبط مطلوب'),
+    formTypeId: z.string().min(1, 'اختر نموذج ضبط فرعيًا'),
+    result: z.string().min(1, 'النتيجة مطلوبة'),
+    crimeTypeId: z.string(),
+    searchBroadcast: z.string(),
+    prosecutionPermission: z.boolean(),
+    discovered: z.boolean(),
+    plaintiff: partySchema,
+    defendant: partySchema,
+    crimePlace: z.string().max(255, 'يجب ألا يتجاوز 255 حرفًا'),
+    crimeDate: z.string(),
+    actionTaken: z.string(),
+    confiscation: confiscationSchema,
+    // No length limit on the backend: the official templates' referral alone runs well past 100 chars.
+    introduction: z.string(),
+    body: z.string(),
+    referral: z.string(),
+    conclusion: z.string(),
+    summary: z.string(),
+  })
+  // Same rule as the backend: a crime type needs the crime's place and date.
+  .superRefine((values, ctx) => {
+    if (!values.crimeTypeId) return;
+    if (values.crimePlace.trim() === '') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['crimePlace'],
+        message: 'مكان الجرم مطلوب مع نوع الجرم',
+      });
+    }
+    if (values.crimeDate === '') {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['crimeDate'],
+        message: 'تاريخ الجرم مطلوب مع نوع الجرم',
+      });
+    }
+  });
 
 export type ReportFormValues = z.infer<typeof reportSchema>;
 export type PartyFormValues = z.infer<typeof partySchema>;
@@ -165,7 +185,7 @@ export function reportToFormValues(report: ReportResponse): ReportFormValues {
 export function reportFormValuesToBody(values: ReportFormValues): ReportRequest {
   return {
     reportNumber: values.reportNumber.trim(),
-    reportDate: values.reportDate || undefined,
+    reportDate: values.reportDate,
     type: values.type as ReportType,
     formTypeId: Number(values.formTypeId),
     result: values.result as ReportResult,
@@ -187,10 +207,16 @@ export function reportFormValuesToBody(values: ReportFormValues): ReportRequest 
   };
 }
 
+function todayIsoDate(): string {
+  const now = new Date();
+  return toIsoDate({ year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() });
+}
+
+/** A new report starts dated today, as the backend used to default it. */
 export function useReportForm(values?: ReportFormValues): UseFormReturn<ReportFormValues> {
   return useForm<ReportFormValues>({
     resolver: zodResolver(reportSchema),
-    defaultValues: EMPTY_REPORT_FORM,
+    defaultValues: { ...EMPTY_REPORT_FORM, reportDate: todayIsoDate() },
     values,
   });
 }
@@ -267,7 +293,7 @@ export const REPORT_SECTION_PROGRESS: Record<
   ReportSectionKey,
   { fields: (keyof ReportFormValues)[]; total: number }
 > = {
-  basics: { fields: ['reportNumber', 'type', 'formTypeId', 'result'], total: 4 },
+  basics: { fields: ['reportNumber', 'reportDate', 'type', 'formTypeId', 'result'], total: 5 },
   crime: { fields: ['crimeTypeId', 'crimePlace', 'crimeDate', 'searchBroadcast'], total: 4 },
   parties: { fields: ['plaintiff', 'defendant'], total: 10 },
   action: { fields: ['actionTaken', 'confiscation'], total: 7 },

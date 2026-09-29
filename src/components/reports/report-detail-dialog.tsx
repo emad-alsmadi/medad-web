@@ -5,7 +5,10 @@ import { useState } from 'react';
 import { useReport } from '@/hooks/reports/use-report';
 import { useReportPdf } from '@/hooks/reports/use-report-mutations';
 import { useReportOptions } from '@/hooks/reports/use-report-options';
-import { useAuthContext } from '@/contexts/auth-context';
+import {
+  REPORT_FORM_NEEDS_FORM_TYPES,
+  useReportPermissions,
+} from '@/hooks/reports/use-report-permissions';
 import { DeleteReportDialog } from '@/components/reports/delete-report-dialog';
 import { ReportResultControl } from '@/components/reports/report-result-control';
 import { PrintCopyMenuItems } from '@/components/reports/print-copy-menu-items';
@@ -19,6 +22,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ROUTES } from '@/constant/routes';
+import { formatDate } from '@/lib/utils/date';
 import { isReportClosed } from '@/types/report';
 import type { Confiscation, Party } from '@/types/report';
 
@@ -97,7 +101,7 @@ interface ReportDetailDialogProps {
 
 export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetailDialogProps) {
   const { data: report, isPending, isError, refetch } = useReport(reportId ?? Number.NaN);
-  const { user } = useAuthContext();
+  const { canUpdate, canDelete, formNeedsFormTypes } = useReportPermissions();
   const { labels } = useReportOptions();
   const [deleting, setDeleting] = useState(false);
   const pdfMutation = useReportPdf();
@@ -130,14 +134,14 @@ export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetai
           {!isError && report && (
             <div className="space-y-4">
               {isClosed && (
-                <p className="flex items-center gap-2 rounded-lg bg-syid-umber/10 px-3 py-2 text-sm text-syid-umber">
+                <p className="bg-syid-umber/10 flex items-center gap-2 rounded-lg px-3 py-2 text-sm text-syid-umber">
                   <Lock className="h-4 w-4 shrink-0" aria-hidden="true" />
                   تم ختم هذا الضبط، فهو للقراءة والطباعة فقط.
                 </p>
               )}
 
               <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                <Item label="التاريخ">{report.reportDate}</Item>
+                <Item label="التاريخ">{formatDate(report.reportDate)}</Item>
                 <Item label="نوع الضبط">{labels.type(report.type)}</Item>
                 <Item label="نموذج الضبط">{report.formType.name}</Item>
                 <Item label="النتيجة">
@@ -151,7 +155,9 @@ export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetai
                 <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                   <Item label="نوع الجرم">{report.crimeType?.name ?? 'بدون جرم'}</Item>
                   <Item label="مكان الجرم">{report.crimePlace ?? '—'}</Item>
-                  <Item label="تاريخ الجرم">{report.crimeDate ?? '—'}</Item>
+                  <Item label="تاريخ الجرم">
+                    {report.crimeDate ? formatDate(report.crimeDate) : '—'}
+                  </Item>
                   <Item label="إذاعة البحث">
                     {report.searchBroadcast ? labels.searchBroadcast(report.searchBroadcast) : '—'}
                   </Item>
@@ -211,15 +217,29 @@ export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetai
                   />
                 </DropdownMenuContent>
               </DropdownMenu>
-              {!isClosed && (
-                <Button variant="outline" size="sm" asChild>
-                  <Link to={ROUTES.reports.edit(report.id)}>
+              {canUpdate &&
+                !isClosed &&
+                (formNeedsFormTypes ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    aria-disabled="true"
+                    title={REPORT_FORM_NEEDS_FORM_TYPES}
+                    className="cursor-not-allowed opacity-50"
+                  >
                     <Pencil />
                     <span>تعديل</span>
-                  </Link>
-                </Button>
-              )}
-              {user?.role === 'ADMIN' && !isClosed && (
+                    <span className="sr-only">{REPORT_FORM_NEEDS_FORM_TYPES}</span>
+                  </Button>
+                ) : (
+                  <Button variant="outline" size="sm" asChild>
+                    <Link to={ROUTES.reports.edit(report.id)}>
+                      <Pencil />
+                      <span>تعديل</span>
+                    </Link>
+                  </Button>
+                ))}
+              {canDelete && !isClosed && (
                 <Button variant="destructive" size="sm" onClick={() => setDeleting(true)}>
                   <Trash2 />
                   <span>حذف</span>

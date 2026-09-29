@@ -1,13 +1,23 @@
 import type { ReactNode } from 'react';
-import { FileText, FolderTree, Gavel, LayoutDashboard, User, Users } from 'lucide-react';
+import {
+  FileText,
+  FolderTree,
+  Gavel,
+  LayoutDashboard,
+  ShieldCheck,
+  User,
+  Users,
+} from 'lucide-react';
 import { ROUTES } from '@/constant/routes';
-import { FEATURES } from '@/constant/features';
+import type { Action, Resource } from '@/types/role';
 
 export interface SidebarLink {
   to: string;
   label: string;
   icon: ReactNode;
   end?: boolean;
+  /** Shown only when the user's role grants it; no permission means always shown. */
+  permission?: { resource: Resource; action: Action };
 }
 
 export interface SidebarGroup {
@@ -21,6 +31,7 @@ export const dashboardLink: SidebarLink = {
   label: 'نظرة عامة',
   icon: <LayoutDashboard />,
   end: true,
+  permission: { resource: 'REPORTS', action: 'VIEW' },
 };
 
 export const profileLink: SidebarLink = {
@@ -34,16 +45,46 @@ export const reportsGroup: SidebarGroup = {
   label: 'الضبوط',
   icon: <FileText />,
   links: [
-    { to: ROUTES.reports.list, label: 'كل الضبوط', icon: <FileText />, end: true },
-    { to: ROUTES.formTypes.list, label: 'نماذج الضبوط', icon: <FolderTree /> },
-    { to: ROUTES.crimeTypes.list, label: 'أنواع الجرم', icon: <Gavel />, end: true },
+    {
+      to: ROUTES.reports.list,
+      label: 'كل الضبوط',
+      icon: <FileText />,
+      end: true,
+      permission: { resource: 'REPORTS', action: 'VIEW' },
+    },
+    {
+      to: ROUTES.formTypes.list,
+      label: 'نماذج الضبوط',
+      icon: <FolderTree />,
+      permission: { resource: 'FORM_TYPES', action: 'VIEW' },
+    },
+    {
+      to: ROUTES.crimeTypes.list,
+      label: 'أنواع الجرم',
+      icon: <Gavel />,
+      end: true,
+      permission: { resource: 'CRIME_TYPES', action: 'VIEW' },
+    },
   ],
 };
 
 export const adminGroup: SidebarGroup = {
   label: 'إدارة النظام',
   icon: <Users />,
-  links: FEATURES.usersPage
-    ? [{ to: ROUTES.admin.users, label: 'المستخدمون', icon: <Users />, end: true }]
-    : [],
+  links: [
+    {
+      to: ROUTES.admin.users,
+      label: 'المستخدمون',
+      icon: <Users />,
+      end: true,
+      permission: { resource: 'USERS', action: 'VIEW' },
+    },
+    {
+      to: ROUTES.admin.roles,
+      label: 'الأدوار والصلاحيات',
+      icon: <ShieldCheck />,
+      end: true,
+      permission: { resource: 'ROLES', action: 'VIEW' },
+    },
+  ],
 };

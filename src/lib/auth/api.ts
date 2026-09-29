@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api/client';
 import type { AuthUser } from '@/types/auth';
-import type { ReportInfo, UserResponse } from '@/types/user';
+import type { RegisterRequest, UserResponse } from '@/types/user';
 
 /**
  * Pure API functions for auth. No react-query here — hooks/auth wraps
@@ -16,31 +16,11 @@ interface LoginResponse extends AuthUser {
   refreshToken: string;
 }
 
-interface RegisterPayload {
-  fullName: string;
-  email: string;
-  password: string;
-  reportInfo?: ReportInfo;
-}
-
-interface RefreshResponse {
-  token: string;
-  refreshToken: string;
-}
-
 export function login(payload: LoginPayload): Promise<LoginResponse> {
   return apiClient.post<LoginResponse>('/auth/login', payload);
 }
 
-/** Used by the admin "create user" feature (lib/users/api.ts re-exports this as `create`). */
-export function register(payload: RegisterPayload): Promise<UserResponse> {
+/** Needs USERS:CREATE; the new account always gets the built-in «مستخدم» role. */
+export function register(payload: RegisterRequest): Promise<UserResponse> {
   return apiClient.post<UserResponse>('/auth/register', payload);
-}
-
-/**
- * Not used by lib/api/client.ts's own refresh-on-401 logic (which inlines
- * a raw fetch to avoid a circular import) — kept for symmetry/manual use.
- */
-export function refresh(refreshToken: string): Promise<RefreshResponse> {
-  return apiClient.post<RefreshResponse>('/auth/refresh', { refreshToken });
 }

@@ -4,7 +4,7 @@ import { Plus, Search, TriangleAlert } from 'lucide-react';
 import { useCrimeTypes } from '@/hooks/crime-types/use-crime-types';
 import { useClientPagination } from '@/hooks/shared/use-client-pagination';
 import { useDebouncedValue } from '@/hooks/shared/use-debounced-value';
-import { useAuthContext } from '@/contexts/auth-context';
+import { useCan } from '@/hooks/auth/use-can';
 import { CrimeTypesTable } from '@/components/crime-types/crime-types-table';
 import { CrimeTypeFormDialog } from '@/components/crime-types/crime-type-form-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
@@ -17,13 +17,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 const PAGE_SIZE = 15;
 
 /**
- * نوع الجرم list, under the reports menu: readable by everyone, managed
- * (add/edit/delete) by ADMIN only — the backend enforces the same split.
+ * نوع الجرم list, under the reports menu: readable with CRIME_TYPES:VIEW,
+ * each of add/edit/delete behind its own permission.
  * /crime-types is a plain array, searched and paged client-side.
  */
 export function CrimeTypesListPage() {
-  const { user } = useAuthContext();
-  const canManage = user?.role === 'ADMIN';
+  const canCreate = useCan()('CRIME_TYPES', 'CREATE');
   const { data, isPending, isError, refetch } = useCrimeTypes();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
@@ -43,7 +42,7 @@ export function CrimeTypesListPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between space-y-0">
           <CardTitle>أنواع الجرم</CardTitle>
-          {canManage && (
+          {canCreate && (
             <Button size="sm" onClick={() => setIsCreateOpen(true)}>
               <Plus />
               <span>نوع جديد</span>
@@ -86,18 +85,14 @@ export function CrimeTypesListPage() {
 
           {!isPending && !isError && (
             <>
-              <CrimeTypesTable
-                crimeTypes={pageItems}
-                offset={page * PAGE_SIZE}
-                canManage={canManage}
-              />
+              <CrimeTypesTable crimeTypes={pageItems} offset={page * PAGE_SIZE} />
               <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
             </>
           )}
         </CardContent>
       </Card>
 
-      {canManage && isCreateOpen && <CrimeTypeFormDialog open onOpenChange={setIsCreateOpen} />}
+      {canCreate && isCreateOpen && <CrimeTypeFormDialog open onOpenChange={setIsCreateOpen} />}
     </>
   );
 }

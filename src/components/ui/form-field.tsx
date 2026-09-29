@@ -12,6 +12,8 @@ interface FormFieldProps {
   labelExtra?: ReactNode;
   /** Marks the field as required, showing an asterisk next to its label. */
   required?: boolean;
+  /** Helper text under the field, hidden while an error is shown. */
+  hint?: string;
 }
 
 export function FormField({
@@ -22,6 +24,7 @@ export function FormField({
   children,
   labelExtra,
   required,
+  hint,
 }: FormFieldProps) {
   return (
     <div className={cn('space-y-1.5', className)}>
@@ -38,10 +41,12 @@ export function FormField({
         {labelExtra}
       </div>
       {children}
-      {error && (
+      {error ? (
         <p role="alert" className="text-sm text-destructive">
           {error}
         </p>
+      ) : (
+        hint && <p className="text-xs text-muted-foreground">{hint}</p>
       )}
     </div>
   );

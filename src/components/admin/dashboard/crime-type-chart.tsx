@@ -1,5 +1,14 @@
 import { useNavigate } from 'react-router-dom';
-import { Bar, BarChart, CartesianGrid, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { StatisticItem } from '@/types/report-statistics';
 
@@ -77,8 +86,10 @@ export function CrimeTypeChart({ items, hrefFor }: CrimeTypeChartProps) {
                   border: '1px solid var(--color-border-subtle)',
                   fontSize: 13,
                 }}
-                formatter={(value: number) => [NUMBER_FORMAT.format(value), 'عدد الضبوط']}
-                labelFormatter={(_, payload) => payload?.[0]?.payload?.fullLabel ?? ''}
+                formatter={(value) => [NUMBER_FORMAT.format(Number(value)), 'عدد الضبوط']}
+                labelFormatter={(_, payload) =>
+                  (payload?.[0]?.payload as { fullLabel?: string } | undefined)?.fullLabel ?? ''
+                }
               />
               <Bar
                 dataKey="count"
@@ -90,7 +101,7 @@ export function CrimeTypeChart({ items, hrefFor }: CrimeTypeChartProps) {
                 className="cursor-pointer"
                 onClick={(entry) => {
                   const href = (entry as unknown as { href?: string }).href;
-                  if (href) navigate(href);
+                  if (href) void navigate(href);
                 }}
               >
                 {data.map((entry) => (

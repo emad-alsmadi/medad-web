@@ -2,6 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { create, remove, update } from '@/lib/form-types/api';
 import { queryKeys } from '@/lib/query/query-keys';
 import { notify } from '@/lib/notifications/toast';
+import { failureMessage } from '@/lib/api/errors';
 import { ApiError } from '@/lib/api/client';
 
 function invalidateFormTypes(queryClient: ReturnType<typeof useQueryClient>) {
@@ -22,7 +23,7 @@ export function useCreateFormType() {
         notify.error('يوجد نموذج ضبط بهذا الاسم مسبقًا.');
         return;
       }
-      notify.error('فشل إنشاء نموذج الضبط. يرجى المحاولة مرة أخرى.');
+      notify.error(failureMessage(error, 'فشل إنشاء نموذج الضبط. يرجى المحاولة مرة أخرى.'));
     },
   });
 }
@@ -41,7 +42,7 @@ export function useUpdateFormType(id: number) {
         notify.error('يوجد نموذج ضبط بهذا الاسم مسبقًا.');
         return;
       }
-      notify.error('فشل تحديث نموذج الضبط. يرجى المحاولة مرة أخرى.');
+      notify.error(failureMessage(error, 'فشل تحديث نموذج الضبط. يرجى المحاولة مرة أخرى.'));
     },
   });
 }
@@ -60,7 +61,7 @@ export function useDeleteFormType() {
         notify.error('لا يمكن الحذف: يحتوي هذا النموذج على أنواع فرعية أو ضبوط مرتبطة به.');
         return;
       }
-      notify.error('فشل حذف نموذج الضبط. يرجى المحاولة مرة أخرى.');
+      notify.error(failureMessage(error, 'فشل حذف نموذج الضبط. يرجى المحاولة مرة أخرى.'));
     },
   });
 }

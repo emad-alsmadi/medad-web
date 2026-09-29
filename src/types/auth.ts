@@ -1,15 +1,15 @@
-/**
- * Shared auth/session types, matching the real backend contract: only
- * ADMIN/USER roles, and the user profile is only ever available from the
- * /auth/login (or /auth/register) response — there is no /auth/me.
- */
-export type UserRole = 'ADMIN' | 'USER';
+import type { Permissions, RoleSummary } from '@/types/role';
 
+/**
+ * The signed-in user as the app needs it for navigation and permission
+ * checks — from /auth/login, then kept in sync with GET /users/me.
+ */
 export interface AuthUser {
-  id: string;
+  id: number;
   fullName: string;
   email: string;
-  role: UserRole;
+  role: RoleSummary | null;
+  permissions: Permissions;
 }
 
 export interface Session {

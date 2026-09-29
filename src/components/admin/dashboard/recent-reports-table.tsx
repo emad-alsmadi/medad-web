@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ROUTES } from '@/constant/routes';
+import { formatDate } from '@/lib/utils/date';
 import type { ReportResponse } from '@/types/report';
 
 export function RecentReportsTable({ reports }: { reports: ReportResponse[] }) {
@@ -46,7 +47,7 @@ export function RecentReportsTable({ reports }: { reports: ReportResponse[] }) {
                 </TableCell>
                 <TableCell className="text-muted-foreground">{report.formType.name}</TableCell>
                 <TableCell className="text-muted-foreground">{report.creator.fullName}</TableCell>
-                <TableCell className="text-muted-foreground">{report.reportDate}</TableCell>
+                <TableCell className="text-muted-foreground">{formatDate(report.reportDate)}</TableCell>
               </TableRow>
             ))}
           </TableBody>

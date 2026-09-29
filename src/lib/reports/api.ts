@@ -17,7 +17,7 @@ function appendFilters(search: URLSearchParams, params: ReportFilterParams): URL
   if (params.type) search.set('type', params.type);
   if (params.crimeTypeId !== undefined) search.set('crimeTypeId', String(params.crimeTypeId));
   if (params.result) search.set('result', params.result);
-  if (params.creatorId !== undefined) search.set('creatorId', params.creatorId);
+  if (params.creatorId !== undefined) search.set('creatorId', String(params.creatorId));
   if (params.from) search.set('from', params.from);
   if (params.to) search.set('to', params.to);
   return search;

@@ -6,7 +6,6 @@ import { useAuthContext } from '@/contexts/auth-context';
 import { useLogout } from '@/hooks/auth/use-logout';
 import { Header } from '@/components/layout/header';
 import { Sidebar, SidebarBackdrop } from '@/components/layout/sidebar';
-import { adminGroup } from '@/components/layout/sidebar-nav';
 import { Footer } from '@/components/layout/footer';
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 
@@ -30,10 +29,7 @@ export function AuthenticatedLayout() {
         isSidebarOpen && 'admin-shell--mobile-open',
       )}
     >
-      <Sidebar
-        adminGroup={user?.role === 'ADMIN' ? adminGroup : undefined}
-        onLogout={() => setIsLogoutConfirmOpen(true)}
-      />
+      <Sidebar onLogout={() => setIsLogoutConfirmOpen(true)} />
       <SidebarBackdrop />
       <div className="admin-shell__main">
         <Header user={user} onLogout={() => setIsLogoutConfirmOpen(true)} />

@@ -3,10 +3,12 @@ import { queryKeys } from '@/lib/query/query-keys';
 import { children, get, list, roots, tree } from '@/lib/form-types/api';
 import type { FormTypeResponse } from '@/types/form-type';
 
-export function useFormTypes() {
+/** `enabled: false` for users without FORM_TYPES:VIEW, who'd only get a 403. */
+export function useFormTypes({ enabled = true }: { enabled?: boolean } = {}) {
   return useQuery({
     queryKey: queryKeys.formTypes.list(),
     queryFn: list,
+    enabled,
   });
 }
 

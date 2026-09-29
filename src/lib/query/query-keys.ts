@@ -7,13 +7,19 @@
  */
 export const queryKeys = {
   auth: {
+    /** The signed-in user's AuthUser (role + permissions), kept in sync with /users/me. */
     session: ['auth', 'session'] as const,
   },
   users: {
     all: ['users'] as const,
     list: () => ['users', 'list'] as const,
-    detail: (id: string) => ['users', 'detail', id] as const,
+    detail: (id: number) => ['users', 'detail', id] as const,
     me: ['users', 'me'] as const,
+  },
+  roles: {
+    all: ['roles'] as const,
+    list: () => ['roles', 'list'] as const,
+    options: () => ['roles', 'options'] as const,
   },
   formTypes: {
     all: ['formTypes'] as const,
@@ -30,7 +36,7 @@ export const queryKeys = {
   },
   reports: {
     all: ['reports'] as const,
-    list: (params?: Record<string, unknown>) => ['reports', 'list', params] as const,
+    list: (params?: object) => ['reports', 'list', params] as const,
     detail: (id: number) => ['reports', 'detail', id] as const,
     options: () => ['reports', 'options'] as const,
     statistics: (range?: Record<string, unknown>) => ['reports', 'statistics', range] as const,

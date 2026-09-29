@@ -12,13 +12,9 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
 import { ApiError } from '@/lib/api/client';
+import { roleLabel } from '@/lib/auth/permissions';
 import type { ApiErrorBody } from '@/types/api';
 import type { ReportInfo } from '@/types/user';
-
-const ROLE_LABELS: Record<'ADMIN' | 'USER', string> = {
-  ADMIN: 'مسؤول',
-  USER: 'مستخدم',
-};
 
 const reportInfoSchema = z.object({
   governorate: z.string().min(1, 'هذا الحقل مطلوب'),
@@ -87,7 +83,7 @@ export function ProfilePage() {
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">الدور</dt>
-                  <dd className="font-medium">{ROLE_LABELS[user.role]}</dd>
+                  <dd className="font-medium">{roleLabel(user.role)}</dd>
                 </div>
                 <div>
                   <dt className="text-sm text-muted-foreground">الحالة</dt>

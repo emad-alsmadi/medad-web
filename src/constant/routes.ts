@@ -9,6 +9,7 @@ export const ROUTES = {
   admin: {
     dashboard: '/admin/dashboard',
     users: '/admin/users',
+    roles: '/admin/roles',
   },
   crimeTypes: {
     list: '/crime-types',

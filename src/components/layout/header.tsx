@@ -11,12 +11,8 @@ import {
 import { useUiStore } from '@/store/ui-store';
 import { useTheme } from '@/contexts/theme-context';
 import { ROUTES } from '@/constant/routes';
+import { roleLabel } from '@/lib/auth/permissions';
 import type { AuthUser } from '@/types/auth';
-
-const ROLE_LABELS: Record<AuthUser['role'], string> = {
-  ADMIN: 'مدير النظام',
-  USER: 'مستخدم',
-};
 
 export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: () => void }) {
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
@@ -91,7 +87,7 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                   <span className="app-top-header__user-meta">
                     <span className="app-top-header__user-name">{user?.fullName}</span>
                     <span className="app-top-header__user-role">
-                      {user ? ROLE_LABELS[user.role] : ''}
+                      {user ? roleLabel(user.role) : ''}
                     </span>
                   </span>
                   <ChevronDown className="app-top-header__user-caret" />
@@ -101,7 +97,7 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                 <div className="flex flex-col gap-0.5 px-2.5 py-2">
                   <span className="text-sm font-semibold text-foreground">{user?.fullName}</span>
                   <span className="text-xs text-muted-foreground">
-                    {user ? ROLE_LABELS[user.role] : ''}
+                    {user ? roleLabel(user.role) : ''}
                   </span>
                 </div>
                 <DropdownMenuSeparator />

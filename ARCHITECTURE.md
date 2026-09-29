@@ -38,7 +38,7 @@ components/report-types/*                   presentational + dialogs, props/hook
 components/ui/*                             generic primitives
         ↓
 routes/lazy-pages.ts             lazy() registration
-routes/route-config.tsx          route entry + RoleGuard
+routes/route-config.tsx          route entry + RequirePermission
 ```
 
 To add a new feature: create the same files under the right feature
@@ -47,11 +47,10 @@ page in `lazy-pages.ts`, and add its route in `route-config.tsx`.
 
 ## Rules
 
-1. **No role logic in shared code.** Shared/common/ui components take
-   data via props only. Pages that are visible to both roles but have
-   role-restricted actions (e.g. report-types list) check
-   `useAuthContext().user.role` in-page to conditionally render the
-   action, not to gate the whole route.
+1. **No permission logic in shared code.** Shared/common/ui components
+   take data via props only. Feature pages and components with
+   permission-restricted actions check `useCan()(resource, action)` to
+   conditionally render the action, not to gate the whole route.
 2. **Components/pages never call `lib/` or `fetch` directly** — always
    go through a hook.
 3. **All routes are lazy-loaded** via `routes/lazy-pages.ts`.
@@ -64,18 +63,19 @@ page in `lazy-pages.ts`, and add its route in `route-config.tsx`.
    `Page<T>` onto them.
 6. **Auth/session/cookies only through `lib/auth`, `lib/session`,
    `lib/cookies`** — never read `document.cookie` or persist tokens
-   elsewhere. There is no `/auth/me`; the user profile is only ever
-   returned by `/auth/login`, so it (along with the access + refresh
-   token) is persisted in a cookie by `lib/session/session.ts`.
-   `lib/api/client.ts`'s `request()` transparently refreshes once on a
-   401 and retries the original call; a second failure clears the
-   session.
+   elsewhere. The signed-in user (role + permissions) comes from
+   `GET /users/me` via `hooks/auth/use-session.ts`; the cookie written by
+   `lib/session/session.ts` is only a snapshot for an instant first
+   paint. `lib/api/client.ts`'s `request()` transparently refreshes once
+   on a 401 and retries the original call; a second failure clears the
+   session (with its own message for a disabled account).
 7. **Env vars are validated** in `lib/env/env.ts` via zod — the app
    throws at boot on misconfiguration instead of failing silently later.
-8. **Route guards, not in-page checks**, gate whether a role can reach a
-   route at all (`components/auth/role-guard.tsx`); in-page role checks
-   are only for conditionally rendering actions within a shared-route
-   page (see rule 1).
+8. **Route guards, not in-page checks**, gate whether a user can reach a
+   route at all (`components/auth/require-permission.tsx`, wired per
+   section in `route-config.tsx`); in-page checks are only for
+   conditionally rendering actions (see rule 1). `/` (HomeRedirect)
+   sends each user to the first page their permissions open.
 9. **Strict TypeScript, no `any`** in domain code; path aliases (`@/...`)
    for all internal imports.
 10. **Toasts go through `lib/notifications/toast.ts`** (`notify.success/
@@ -87,17 +87,27 @@ page in `lazy-pages.ts`, and add its route in `route-config.tsx`.
   pass.
 - Automated tests (Vitest, Testing Library, MSW, Playwright) — no test
   tooling or config included in this pass.
-- Self-registration UI — `POST /auth/register` is implemented at the
-  `lib/auth/api.ts` level only; no page/route consumes it (see
-  `API_INTEGRATION.md` and the permission matrix, which never lists
-  self-registration as a capability of either role).
+- Self-registration UI — `POST /auth/register` needs `USERS:CREATE`; it
+  is only used by the create-user dialog when the creator can't list
+  roles (the account then gets the built-in «مستخدم» role).
 
-## Roles
+## Roles and permissions
 
-Only two roles exist: `ADMIN` and `USER` (`types/auth.ts`). Both roles
-can read and create/edit reports, report types, and users; only `ADMIN`
-can delete a report, manage report types (create/edit/delete), edit
-another user's report info, or delete a user. See `API_INTEGRATION.md`
-§4 for the full permission matrix — the UI mirrors it (hides/disables
-actions a role can't perform) but the backend remains the actual
-enforcement.
+Each user has one role; a role is a set of `RESOURCE:ACTION` permissions
+(`REPORTS`, `FORM_TYPES`, `CRIME_TYPES`, `USERS`, `ROLES` ×
+`VIEW`/`CREATE`/`UPDATE`/`DELETE`), managed on `/admin/roles`
+(`types/role.ts`). Two roles are built in: «مدير النظام» (`builtIn:
+'ADMIN'`, every permission, read-only) and «مستخدم» (`builtIn: 'USER'`,
+editable, not deletable). Never branch on `builtIn` to authorize —
+check the permission with `can()` / `useCan()` (`lib/auth/permissions.ts`,
+`hooks/auth/use-can.ts`).
+
+The backend applies role changes on the very next request, so the
+session refetches `/users/me` on tab focus once stale (60s) and at once
+after any 403 (`lib/query/query-client.ts`). Queries a user can't run are
+created with `enabled: false` (`useUsers`, `useFormTypes`,
+`useCrimeTypes`, `useRoles`) instead of letting them fail with a 403.
+Choices that would grant more than the editor holds are disabled
+(`exceedsPermissions`), since the backend refuses them. See
+`api/API_INTEGRATION.md` §4 for the full matrix; the backend remains the
+actual enforcement.

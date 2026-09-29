@@ -3,7 +3,7 @@ import { Helmet } from 'react-helmet-async';
 import { Plus, TriangleAlert } from 'lucide-react';
 import { useFormTypes, useFormTypesTree } from '@/hooks/form-types/use-form-types';
 import { useClientPagination } from '@/hooks/shared/use-client-pagination';
-import { useAuthContext } from '@/contexts/auth-context';
+import { useCan } from '@/hooks/auth/use-can';
 import { FormTypeTable } from '@/components/form-types/form-type-table';
 import { FormTypeTree } from '@/components/form-types/form-type-tree';
 import { FormTypeForm } from '@/components/form-types/form-type-form';
@@ -17,8 +17,7 @@ import { cn } from '@/lib/utils/cn';
 type ViewMode = 'list' | 'tree';
 
 export function FormTypesListPage() {
-  const { user } = useAuthContext();
-  const canManage = user?.role === 'ADMIN';
+  const canCreate = useCan()('FORM_TYPES', 'CREATE');
   const [creating, setCreating] = useState(false);
   const [view, setView] = useState<ViewMode>('list');
 
@@ -49,7 +48,7 @@ export function FormTypesListPage() {
                 عرض شجري
               </Button>
             </div>
-            {canManage && (
+            {canCreate && (
               <Button size="sm" onClick={() => setCreating(true)}>
                 <Plus />
                 <span>نموذج جديد</span>
@@ -59,7 +58,7 @@ export function FormTypesListPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           {view === 'list' ? (
-            <FormTypesListView canManage={canManage} />
+            <FormTypesListView />
           ) : (
             <FormTypesTreeView />
           )}
@@ -71,7 +70,7 @@ export function FormTypesListPage() {
   );
 }
 
-function FormTypesListView({ canManage }: { canManage: boolean }) {
+function FormTypesListView() {
   const { data, isPending, isError, refetch } = useFormTypes();
   const { page, totalPages, pageItems, setPage } = useClientPagination(data ?? []);
 
@@ -99,7 +98,7 @@ function FormTypesListView({ canManage }: { canManage: boolean }) {
 
   return (
     <>
-      <FormTypeTable types={pageItems} canManage={canManage} />
+      <FormTypeTable types={pageItems} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </>
   );

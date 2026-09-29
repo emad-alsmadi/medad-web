@@ -509,9 +509,9 @@ Rules:
 
 ### Brand identity — typography (mandatory)
 
-The brand typeface is **Forest**, loaded via `@font-face` in `styles/globals.css` from `public/fonts/` (`HayyakumAllah-*` files: Light 300, Regular 400, Medium 500, Bold 700).
+The brand typeface is **Qomra Arabic**, loaded via `@font-face` in `styles/globals.css` from `public/images/fonts/` (`itfQomraArabic-*.otf` files: Light 300, Regular 400, Bold 700; weight 500 falls back to Regular).
 
-* `--font-family` is already set to use `'Forest'` first, with fallbacks. Do not override `font-family` in components; rely on `body`/`--font-family` cascading, or existing utility classes.
+* `--font-family` is already set to use `'Qomra Arabic'` first, with fallbacks. Do not override `font-family` in components; rely on `body`/`--font-family` cascading, or existing utility classes.
 * Do not import or introduce any other font family (Google Fonts, other webfonts, etc.).
 
 ### Reuse existing styles before creating new ones (mandatory)
@@ -646,10 +646,12 @@ Authorization is a security boundary.
 Use the existing:
 
 ```text
-components/auth/role-guard.tsx
+components/auth/require-permission.tsx   (route level, per section in routes/route-config.tsx)
+hooks/auth/use-can.ts                    (rendering decisions)
+lib/auth/permissions.ts                  (can(), roleLabel(), exceedsPermissions())
 ```
 
-and route-level protection.
+Permissions come from the backend (`GET /users/me`) as `RESOURCE:ACTION` pairs. Never authorize on a role's name or `builtIn`.
 
 Do not duplicate role checks throughout pages and components unless a UI decision genuinely requires permission-aware rendering.
 

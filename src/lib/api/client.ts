@@ -7,6 +7,7 @@ import {
   updateTokens,
 } from '@/lib/session/session';
 import { notify } from '@/lib/notifications/toast';
+import type { ApiErrorBody } from '@/types/api';
 
 let isForcingLogout = false;
 
@@ -29,12 +30,16 @@ let isForcingLogout = false;
  * widget on the dashboard refetching after an expired token) would
  * otherwise stack duplicate toasts and redirects.
  */
-function forceLogoutRedirect(): void {
+function forceLogoutRedirect(cause: unknown): void {
   if (isForcingLogout || window.location.pathname === ROUTES.login) return;
   isForcingLogout = true;
 
   clearSession();
-  notify.warning('انتهت جلستك. يرجى تسجيل الدخول من جديد.');
+  notify.warning(
+    isAccountDisabledError(cause)
+      ? 'تم تعطيل حسابك. يرجى مراجعة مدير النظام.'
+      : 'انتهت جلستك. يرجى تسجيل الدخول من جديد.',
+  );
   // A hard navigation (window.location.href) unmounts the whole React tree
   // immediately, including the toast that was just triggered — without this
   // delay the browser leaves the page before the toast ever paints. The
@@ -55,6 +60,15 @@ export class ApiError extends Error {
     this.status = status;
     this.details = details;
   }
+}
+
+/** A 401 for an account an administrator has disabled — refreshing won't help. */
+export function isAccountDisabledError(error: unknown): boolean {
+  return (
+    error instanceof ApiError &&
+    error.status === 401 &&
+    (error.details as ApiErrorBody | undefined)?.message === 'User is disabled'
+  );
 }
 
 interface RequestOptions extends Omit<RequestInit, 'body'> {
@@ -85,7 +99,8 @@ async function refreshAccessToken(): Promise<string> {
   });
 
   if (!response.ok) {
-    throw new ApiError('Failed to refresh token', response.status);
+    const details: unknown = await response.json().catch(() => undefined);
+    throw new ApiError('Failed to refresh token', response.status, details);
   }
 
   const data = (await response.json()) as RefreshResponse;
@@ -165,13 +180,13 @@ async function request<TResponse>(
         await refreshPromise;
         return await perform(path, { ...options, _isRetry: true });
       } catch (retryError) {
-        forceLogoutRedirect();
+        forceLogoutRedirect(retryError);
         throw retryError;
       }
     }
 
     if (error instanceof ApiError && error.status === 401 && !isAuthPath) {
-      forceLogoutRedirect();
+      forceLogoutRedirect(error);
     }
 
     throw error;

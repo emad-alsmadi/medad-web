@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useAuthContext } from '@/contexts/auth-context';
+import { useCan } from '@/hooks/auth/use-can';
 import { useReportTemplate } from '@/hooks/report-templates/use-report-template';
 import {
   useDeleteReportTemplate,
@@ -72,8 +72,8 @@ export function FormTypeTemplateForm({
   open,
   onOpenChange,
 }: FormTypeTemplateFormProps) {
-  const { user } = useAuthContext();
-  const canManage = user?.role === 'ADMIN';
+  // Creating, replacing or deleting a template counts as updating its form type.
+  const canManage = useCan()('FORM_TYPES', 'UPDATE');
   const { data: template, isPending, isNotFound } = useReportTemplate(formType.id);
   const saveMutation = useSaveReportTemplate(formType.id);
   const deleteMutation = useDeleteReportTemplate(formType.id);

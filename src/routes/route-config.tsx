@@ -3,12 +3,12 @@ import type { RouteObject } from 'react-router-dom';
 import { Navigate } from 'react-router-dom';
 import { AuthenticatedLayout } from '@/layouts/authenticated-layout';
 import { RequireAuth } from '@/components/auth/require-auth';
-import { RequireRole } from '@/components/auth/require-role';
+import { RequirePermission } from '@/components/auth/require-permission';
 import { GuestOnlyRoute } from '@/components/auth/guest-only-route';
 import { HomeRedirect } from '@/components/auth/home-redirect';
 import { RouteFallback } from '@/components/common/route-fallback';
 import { ROUTES } from '@/constant/routes';
-import { FEATURES } from '@/constant/features';
+import type { Action, Resource } from '@/types/role';
 import {
   AdminDashboardPage,
   AdminUsersListPage,
@@ -20,10 +20,15 @@ import {
   ReportsListPage,
   FormTypesListPage,
   CrimeTypesListPage,
+  RolesListPage,
 } from '@/routes/lazy-pages';
 
 function withSuspense(element: React.ReactNode) {
   return <Suspense fallback={<RouteFallback />}>{element}</Suspense>;
+}
+
+function guarded(resource: Resource, action: Action, children: RouteObject[]): RouteObject {
+  return { element: <RequirePermission resource={resource} action={action} />, children };
 }
 
 /**
@@ -33,13 +38,12 @@ function withSuspense(element: React.ReactNode) {
  *
  * Route protection is layered, each guard doing exactly one job:
  *   - GuestOnlyRoute: only reachable when logged OUT (bounces an
- *     authenticated user straight to the dashboard).
+ *     authenticated user straight to their home page).
  *   - RequireAuth: only reachable when logged IN (bounces to /login,
  *     remembering where the visitor was headed).
- *   - RequireRole: nested under RequireAuth — further restricts a branch
- *     of already-authenticated routes to specific roles.
- * Every route below is covered by exactly one of these; there is no
- * page that falls through unprotected.
+ *   - RequirePermission: nested under RequireAuth — each section needs
+ *     the permission its page's main request needs on the backend.
+ * `/` and the profile are open to every signed-in user.
  */
 export const routeConfig: RouteObject[] = [
   {
@@ -50,50 +54,44 @@ export const routeConfig: RouteObject[] = [
     element: <RequireAuth />,
     children: [
       {
-        element: <RequireRole allowedRoles={['ADMIN', 'USER']} />,
+        element: <AuthenticatedLayout />,
         children: [
-          {
-            element: <AuthenticatedLayout />,
-            children: [
-              { path: ROUTES.home, element: <HomeRedirect /> },
-              { path: ROUTES.profile, element: withSuspense(<ProfilePage />) },
-              { path: ROUTES.reports.list, element: withSuspense(<ReportsListPage />) },
-              {
-                path: ROUTES.reports.detail(':id'),
-                element: withSuspense(<ReportDetailPage />),
-              },
+          { path: ROUTES.home, element: <HomeRedirect /> },
+          { path: ROUTES.profile, element: withSuspense(<ProfilePage />) },
+          guarded('REPORTS', 'VIEW', [
+            { path: ROUTES.admin.dashboard, element: withSuspense(<AdminDashboardPage />) },
+            { path: ROUTES.reports.list, element: withSuspense(<ReportsListPage />) },
+            {
+              path: ROUTES.reports.detail(':id'),
+              element: withSuspense(<ReportDetailPage />),
+            },
+          ]),
+          // The edit form picks its form type from /form-types, so it needs that list too.
+          guarded('REPORTS', 'UPDATE', [
+            guarded('FORM_TYPES', 'VIEW', [
               { path: ROUTES.reports.edit(':id'), element: withSuspense(<ReportFormPage />) },
-              { path: ROUTES.formTypes.list, element: withSuspense(<FormTypesListPage />) },
-              {
-                path: ROUTES.formTypes.legacyList,
-                element: <Navigate to={ROUTES.formTypes.list} replace />,
-              },
-              { path: ROUTES.crimeTypes.list, element: withSuspense(<CrimeTypesListPage />) },
-              {
-                path: ROUTES.crimeTypes.legacyList,
-                element: <Navigate to={ROUTES.crimeTypes.list} replace />,
-              },
-            ],
-          },
-        ],
-      },
-      {
-        element: <RequireRole allowedRoles={['ADMIN']} />,
-        children: [
+            ]),
+          ]),
+          guarded('FORM_TYPES', 'VIEW', [
+            { path: ROUTES.formTypes.list, element: withSuspense(<FormTypesListPage />) },
+          ]),
           {
-            element: <AuthenticatedLayout />,
-            children: [
-              { path: ROUTES.admin.dashboard, element: withSuspense(<AdminDashboardPage />) },
-              {
-                path: ROUTES.admin.users,
-                element: FEATURES.usersPage ? (
-                  withSuspense(<AdminUsersListPage />)
-                ) : (
-                  <Navigate to={ROUTES.admin.dashboard} replace />
-                ),
-              },
-            ],
+            path: ROUTES.formTypes.legacyList,
+            element: <Navigate to={ROUTES.formTypes.list} replace />,
           },
+          guarded('CRIME_TYPES', 'VIEW', [
+            { path: ROUTES.crimeTypes.list, element: withSuspense(<CrimeTypesListPage />) },
+          ]),
+          {
+            path: ROUTES.crimeTypes.legacyList,
+            element: <Navigate to={ROUTES.crimeTypes.list} replace />,
+          },
+          guarded('USERS', 'VIEW', [
+            { path: ROUTES.admin.users, element: withSuspense(<AdminUsersListPage />) },
+          ]),
+          guarded('ROLES', 'VIEW', [
+            { path: ROUTES.admin.roles, element: withSuspense(<RolesListPage />) },
+          ]),
         ],
       },
     ],

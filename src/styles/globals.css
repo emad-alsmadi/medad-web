@@ -87,31 +87,22 @@
    ====================================================================== */
 
 @font-face {
-  font-family: 'Forest';
-  src: url('/fonts/HayyakumAllah-Light.woff2') format('woff2'),
-    url('/fonts/HayyakumAllah-Light.woff') format('woff');
+  font-family: 'Qomra Arabic';
+  src: url('/images/fonts/itfQomraArabic-Light.otf') format('opentype');
   font-weight: 300;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Forest';
-  src: url('/fonts/HayyakumAllah-Regular.woff2') format('woff2'),
-    url('/fonts/HayyakumAllah-Regular.woff') format('woff');
+  font-family: 'Qomra Arabic';
+  src: url('/images/fonts/itfQomraArabic-Regular.otf') format('opentype');
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: 'Forest';
-  src: url('/fonts/HayyakumAllah-Medium.woff2') format('woff2');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Forest';
-  src: url('/fonts/HayyakumAllah-Bold.woff2') format('woff2');
+  font-family: 'Qomra Arabic';
+  src: url('/images/fonts/itfQomraArabic-Bold.otf') format('opentype');
   font-weight: 700;
   font-style: normal;
   font-display: swap;
@@ -142,7 +133,7 @@
   --color-text: var(--syid-forest-deep);
   --color-text-secondary: #3d524e;
   --color-text-muted: #6b7c78;
-  --font-family: 'Forest', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  --font-family: 'Qomra Arabic', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
   --syid-gradient: linear-gradient(
     135deg,
     var(--syid-forest-deep) 0%,

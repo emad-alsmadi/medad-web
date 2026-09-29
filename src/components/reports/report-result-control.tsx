@@ -10,6 +10,7 @@ import {
 import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { useReportOptions } from '@/hooks/reports/use-report-options';
 import { useChangeReportResult } from '@/hooks/reports/use-report-mutations';
+import { useCan } from '@/hooks/auth/use-can';
 import { cn } from '@/lib/utils/cn';
 import type { ReportResponse, ReportResult } from '@/types/report';
 
@@ -39,13 +40,15 @@ export function ReportResultBadge({ result }: { result: ReportResult | null }) {
  * transitions (PATCH /reports/{id}/result). A CLOSED report shows a
  * plain locked badge — it can never leave that state — and moving to
  * CLOSED asks for confirmation first, since it seals the report for good.
+ * Without REPORTS:UPDATE it is a plain badge too.
  */
 export function ReportResultControl({ report }: { report: ReportResponse }) {
   const { data: options, labels } = useReportOptions();
   const mutation = useChangeReportResult();
   const [confirmingClose, setConfirmingClose] = useState(false);
+  const canUpdate = useCan()('REPORTS', 'UPDATE');
 
-  if (report.result === 'CLOSED') return <ReportResultBadge result="CLOSED" />;
+  if (report.result === 'CLOSED' || !canUpdate) return <ReportResultBadge result={report.result} />;
 
   const targets = (options?.results ?? []).filter((option) => option.value !== report.result);
 

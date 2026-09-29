@@ -1,8 +1,8 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { remove } from '@/lib/users/api';
+import { userActionErrorMessage } from '@/lib/users/errors';
 import { queryKeys } from '@/lib/query/query-keys';
 import { notify } from '@/lib/notifications/toast';
-import { ApiError } from '@/lib/api/client';
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
@@ -14,11 +14,12 @@ export function useDeleteUser() {
       notify.success('تم حذف المستخدم.');
     },
     onError: (error) => {
-      if (error instanceof ApiError && error.status === 409) {
-        notify.error('لا يمكن الحذف: يوجد ضبوط مرتبطة بهذا المستخدم.');
-        return;
-      }
-      notify.error('فشل حذف المستخدم. يرجى المحاولة مرة أخرى.');
+      notify.error(
+        userActionErrorMessage(error, {
+          conflict: 'لا يمكن الحذف: يوجد ضبوط مرتبطة بهذا المستخدم.',
+          fallback: 'فشل حذف المستخدم. يرجى المحاولة مرة أخرى.',
+        }),
+      );
     },
   });
 }

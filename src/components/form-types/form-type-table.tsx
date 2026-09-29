@@ -14,15 +14,16 @@ import { EmptyState } from '@/components/shared/empty-state';
 import { FormTypeForm } from '@/components/form-types/form-type-form';
 import { DeleteFormTypeDialog } from '@/components/form-types/delete-form-type-dialog';
 import { FormTypeTemplateForm } from '@/components/form-types/form-type-template-form';
+import { useCan } from '@/hooks/auth/use-can';
 import { isSelectableFormType } from '@/types/form-type';
 import type { FormTypeResponse } from '@/types/form-type';
 
 interface FormTypeTableProps {
   types: FormTypeResponse[];
-  canManage: boolean;
 }
 
-export function FormTypeTable({ types, canManage }: FormTypeTableProps) {
+export function FormTypeTable({ types }: FormTypeTableProps) {
+  const can = useCan();
   const [editing, setEditing] = useState<FormTypeResponse | null>(null);
   const [deleting, setDeleting] = useState<FormTypeResponse | null>(null);
   const [managingTemplate, setManagingTemplate] = useState<FormTypeResponse | null>(null);
@@ -66,15 +67,15 @@ export function FormTypeTable({ types, canManage }: FormTypeTableProps) {
                     النص
                   </Button>
                 )}
-                {canManage && (
-                  <>
-                    <Button variant="ghost" size="sm" onClick={() => setEditing(type)}>
-                      تعديل
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={() => setDeleting(type)}>
-                      حذف
-                    </Button>
-                  </>
+                {can('FORM_TYPES', 'UPDATE') && (
+                  <Button variant="ghost" size="sm" onClick={() => setEditing(type)}>
+                    تعديل
+                  </Button>
+                )}
+                {can('FORM_TYPES', 'DELETE') && (
+                  <Button variant="ghost" size="sm" onClick={() => setDeleting(type)}>
+                    حذف
+                  </Button>
                 )}
               </TableCell>
             </TableRow>
@@ -83,11 +84,7 @@ export function FormTypeTable({ types, canManage }: FormTypeTableProps) {
       </Table>
 
       {editing && (
-        <FormTypeForm
-          formType={editing}
-          open
-          onOpenChange={(open) => !open && setEditing(null)}
-        />
+        <FormTypeForm formType={editing} open onOpenChange={(open) => !open && setEditing(null)} />
       )}
       {deleting && (
         <DeleteFormTypeDialog

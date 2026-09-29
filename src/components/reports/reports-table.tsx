@@ -27,8 +27,9 @@ import { ReportResultControl } from '@/components/reports/report-result-control'
 import { PrintCopyMenuItems } from '@/components/reports/print-copy-menu-items';
 import { useReportPdf } from '@/hooks/reports/use-report-mutations';
 import { useReportOptions } from '@/hooks/reports/use-report-options';
-import { useAuthContext } from '@/contexts/auth-context';
+import { useReportPermissions } from '@/hooks/reports/use-report-permissions';
 import { ROUTES } from '@/constant/routes';
+import { formatDate } from '@/lib/utils/date';
 import { isReportClosed } from '@/types/report';
 import type { ReportResponse } from '@/types/report';
 
@@ -39,8 +40,7 @@ interface ReportsTableProps {
 }
 
 export function ReportsTable({ reports }: ReportsTableProps) {
-  const { user } = useAuthContext();
-  const canDelete = user?.role === 'ADMIN';
+  const { canUpdate, canDelete, formNeedsFormTypes } = useReportPermissions();
   const [deleteReport, setDeleteReport] = useState<ReportResponse | null>(null);
   const [detailReportId, setDetailReportId] = useState<number | null>(null);
   const pdfMutation = useReportPdf();
@@ -83,7 +83,7 @@ export function ReportsTable({ reports }: ReportsTableProps) {
                     {report.reportNumber}
                   </span>
                 </TableCell>
-                <TableCell className="whitespace-nowrap">{report.reportDate}</TableCell>
+                <TableCell className="whitespace-nowrap">{formatDate(report.reportDate)}</TableCell>
                 <TableCell>{labels.type(report.type)}</TableCell>
                 <TableCell>{report.formType.name}</TableCell>
                 <TableCell className="text-muted-foreground">
@@ -105,14 +105,26 @@ export function ReportsTable({ reports }: ReportsTableProps) {
                         <Eye />
                         <span>عرض التفاصيل</span>
                       </DropdownMenuItem>
-                      {!isClosed && (
-                        <DropdownMenuItem asChild>
-                          <Link to={ROUTES.reports.edit(report.id)}>
+                      {canUpdate &&
+                        !isClosed &&
+                        (formNeedsFormTypes ? (
+                          <DropdownMenuItem disabled className="items-start">
                             <Pencil />
-                            <span>تعديل</span>
-                          </Link>
-                        </DropdownMenuItem>
-                      )}
+                            <span className="flex flex-col">
+                              <span>تعديل</span>
+                              <span className="max-w-[14rem] text-xs text-muted-foreground">
+                                يتطلب صلاحية استعراض أنواع النماذج
+                              </span>
+                            </span>
+                          </DropdownMenuItem>
+                        ) : (
+                          <DropdownMenuItem asChild>
+                            <Link to={ROUTES.reports.edit(report.id)}>
+                              <Pencil />
+                              <span>تعديل</span>
+                            </Link>
+                          </DropdownMenuItem>
+                        ))}
                       <DropdownMenuSub>
                         <DropdownMenuSubTrigger>
                           <Printer className="h-4 w-4 text-muted-foreground" />

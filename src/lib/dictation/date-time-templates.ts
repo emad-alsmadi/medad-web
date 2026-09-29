@@ -153,18 +153,19 @@ function candidateForms(word: string): string[] {
 
 /** Levenshtein distance — small dictionary, short words, so O(n*m) is fine. */
 function editDistance(a: string, b: string): number {
-  const dp: number[][] = Array.from({ length: a.length + 1 }, () => new Array<number>(b.length + 1).fill(0));
-  for (let i = 0; i <= a.length; i++) dp[i][0] = i;
-  for (let j = 0; j <= b.length; j++) dp[0][j] = j;
+  // Two rolling rows instead of the full table: row i only ever reads row i - 1.
+  let previous = Array.from({ length: b.length + 1 }, (_, j) => j);
   for (let i = 1; i <= a.length; i++) {
+    const current = [i];
     for (let j = 1; j <= b.length; j++) {
-      dp[i][j] =
+      current[j] =
         a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+          ? previous[j - 1]!
+          : 1 + Math.min(previous[j]!, current[j - 1]!, previous[j - 1]!);
     }
+    previous = current;
   }
-  return dp[a.length][b.length];
+  return previous[b.length]!;
 }
 
 /**
@@ -220,7 +221,7 @@ export function expandDateTimeKeywords(text: string): string {
   const result: string[] = [];
 
   for (let i = 0; i < tokens.length; i++) {
-    const token = tokens[i];
+    const token = tokens[i]!;
     if (token === '' || /^\s+$/.test(token)) {
       result.push(token);
       continue;
@@ -247,7 +248,7 @@ export function expandDateTimeKeywords(text: string): string {
         nextWord &&
         isCompoundStarter(nextWord, compoundDictionary)
       ) {
-        result.push(tokens[spaceIdx], nextWord);
+        result.push(tokens[spaceIdx]!, nextWord);
         i = nextWordIdx;
       }
     }

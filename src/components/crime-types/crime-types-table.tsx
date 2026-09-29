@@ -14,17 +14,20 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import { EmptyState } from '@/components/shared/empty-state';
 import { CrimeTypeFormDialog } from '@/components/crime-types/crime-type-form-dialog';
 import { useDeleteCrimeType } from '@/hooks/crime-types/use-crime-type-mutations';
+import { useCan } from '@/hooks/auth/use-can';
 import type { CrimeTypeResponse } from '@/types/crime-type';
 
 interface CrimeTypesTableProps {
   crimeTypes: CrimeTypeResponse[];
   /** Row number of the first item, for the "م" column across pages. */
   offset: number;
-  /** ADMIN only: edit/delete actions (everyone else gets a read-only list). */
-  canManage: boolean;
 }
 
-export function CrimeTypesTable({ crimeTypes, offset, canManage }: CrimeTypesTableProps) {
+export function CrimeTypesTable({ crimeTypes, offset }: CrimeTypesTableProps) {
+  const can = useCan();
+  const canUpdate = can('CRIME_TYPES', 'UPDATE');
+  const canDelete = can('CRIME_TYPES', 'DELETE');
+  const hasActions = canUpdate || canDelete;
   const [editing, setEditing] = useState<CrimeTypeResponse | null>(null);
   const [deleting, setDeleting] = useState<CrimeTypeResponse | null>(null);
   const deleteMutation = useDeleteCrimeType();
@@ -37,13 +40,13 @@ export function CrimeTypesTable({ crimeTypes, offset, canManage }: CrimeTypesTab
           <TableRow>
             <TableHead className="w-16">م</TableHead>
             <TableHead>الاسم</TableHead>
-            {canManage && <TableHead className="text-end">الإجراءات</TableHead>}
+            {hasActions && <TableHead className="text-end">الإجراءات</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {crimeTypes.length === 0 && (
             <TableRow>
-              <TableCell colSpan={canManage ? 3 : 2} className="p-0">
+              <TableCell colSpan={hasActions ? 3 : 2} className="p-0">
                 <EmptyState icon={Gavel} title="لا توجد أنواع جرم" />
               </TableCell>
             </TableRow>
@@ -52,14 +55,18 @@ export function CrimeTypesTable({ crimeTypes, offset, canManage }: CrimeTypesTab
             <TableRow key={crimeType.id}>
               <TableCell className="text-muted-foreground">{offset + i + 1}</TableCell>
               <TableCell>{crimeType.name}</TableCell>
-              {canManage && (
+              {hasActions && (
                 <TableCell className="space-x-2 text-end rtl:space-x-reverse">
-                  <Button variant="ghost" size="sm" onClick={() => setEditing(crimeType)}>
-                    تعديل
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => setDeleting(crimeType)}>
-                    حذف
-                  </Button>
+                  {canUpdate && (
+                    <Button variant="ghost" size="sm" onClick={() => setEditing(crimeType)}>
+                      تعديل
+                    </Button>
+                  )}
+                  {canDelete && (
+                    <Button variant="ghost" size="sm" onClick={() => setDeleting(crimeType)}>
+                      حذف
+                    </Button>
+                  )}
                 </TableCell>
               )}
             </TableRow>
@@ -84,8 +91,7 @@ export function CrimeTypesTable({ crimeTypes, offset, canManage }: CrimeTypesTab
         confirmLabel="حذف"
         isConfirming={deleteMutation.isPending}
         onConfirm={() =>
-          deleting &&
-          deleteMutation.mutate(deleting.id, { onSettled: () => setDeleting(null) })
+          deleting && deleteMutation.mutate(deleting.id, { onSettled: () => setDeleting(null) })
         }
       />
     </>

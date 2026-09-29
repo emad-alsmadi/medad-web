@@ -2,25 +2,32 @@ import { NavLink } from 'react-router-dom';
 import { LogOut, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { useUiStore } from '@/store/ui-store';
+import { useCan } from '@/hooks/auth/use-can';
 import { ROUTES } from '@/constant/routes';
 import {
+  adminGroup,
   dashboardLink,
   profileLink,
   reportsGroup,
   type SidebarGroup,
+  type SidebarLink,
 } from '@/components/layout/sidebar-nav';
 import { SidebarLinkItem } from '@/components/layout/sidebar-link-item';
 import { SidebarGroupItem } from '@/components/layout/sidebar-group-item';
 
-export function Sidebar({
-  adminGroup,
-  onLogout,
-}: {
-  adminGroup?: SidebarGroup;
-  onLogout: () => void;
-}) {
+export function Sidebar({ onLogout }: { onLogout: () => void }) {
   const isSidebarOpen = useUiStore((state) => state.isSidebarOpen);
   const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
+  const can = useCan();
+
+  const isVisible = (link: SidebarLink) =>
+    !link.permission || can(link.permission.resource, link.permission.action);
+  const visibleGroup = (group: SidebarGroup): SidebarGroup => ({
+    ...group,
+    links: group.links.filter(isVisible),
+  });
+  const reports = visibleGroup(reportsGroup);
+  const admin = visibleGroup(adminGroup);
 
   return (
     <aside
@@ -52,10 +59,10 @@ export function Sidebar({
       </div>
 
       <nav className="app-sidebar__nav">
-        {adminGroup && <SidebarLinkItem link={dashboardLink} />}
-        <SidebarGroupItem group={reportsGroup} />
+        {isVisible(dashboardLink) && <SidebarLinkItem link={dashboardLink} />}
+        {reports.links.length > 0 && <SidebarGroupItem group={reports} />}
         <SidebarLinkItem link={profileLink} />
-        {adminGroup && adminGroup.links.length > 0 && <SidebarGroupItem group={adminGroup} />}
+        {admin.links.length > 0 && <SidebarGroupItem group={admin} />}
       </nav>
 
       <div className="app-sidebar__footer">

@@ -5,6 +5,10 @@ import { useSearchParams } from 'react-router-dom';
 import { useReports } from '@/hooks/reports/use-reports';
 import { useExportReports } from '@/hooks/reports/use-report-mutations';
 import { useDebouncedValue } from '@/hooks/shared/use-debounced-value';
+import {
+  REPORT_FORM_NEEDS_FORM_TYPES,
+  useReportPermissions,
+} from '@/hooks/reports/use-report-permissions';
 import { ReportsTable } from '@/components/reports/reports-table';
 import { ReportFilters } from '@/components/reports/report-filters';
 import { CreateReportDialog } from '@/components/reports/create-report-dialog';
@@ -50,7 +54,7 @@ function paramsFromSearch(params: URLSearchParams): ReportListParams {
     type: enumParam(params, 'type', REPORT_TYPES),
     crimeTypeId: numberParam(params, 'crimeTypeId'),
     result: enumParam(params, 'result', REPORT_RESULTS),
-    creatorId: params.get('creatorId') ?? undefined,
+    creatorId: numberParam(params, 'creatorId'),
     from: params.get('from') ?? undefined,
     to: params.get('to') ?? undefined,
     sort: params.get('sort') ?? undefined,
@@ -64,7 +68,7 @@ function searchFromParams(value: ReportListParams): URLSearchParams {
   if (value.type) params.set('type', value.type);
   if (value.crimeTypeId !== undefined) params.set('crimeTypeId', String(value.crimeTypeId));
   if (value.result) params.set('result', value.result);
-  if (value.creatorId) params.set('creatorId', value.creatorId);
+  if (value.creatorId !== undefined) params.set('creatorId', String(value.creatorId));
   if (value.from) params.set('from', value.from);
   if (value.to) params.set('to', value.to);
   if (value.sort) params.set('sort', value.sort);
@@ -77,6 +81,7 @@ export function ReportsListPage() {
   const { data, isPending, isError, isFetching, refetch } = useReports(filters);
   const exportMutation = useExportReports();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const { canCreate, formNeedsFormTypes } = useReportPermissions();
   const viewId = searchParams.has('view') ? Number(searchParams.get('view')) : null;
 
   const [search, setSearch] = useState('');
@@ -122,10 +127,25 @@ export function ReportsListPage() {
               <FileSpreadsheet />
               <span>{exportMutation.isPending ? 'جاري التصدير…' : 'تصدير Excel'}</span>
             </Button>
-            <Button size="sm" onClick={() => setIsCreateOpen(true)}>
-              <Plus />
-              <span>إنشاء ضبط</span>
-            </Button>
+            {canCreate &&
+              (formNeedsFormTypes ? (
+                // aria-disabled, not disabled: it stays focusable and hoverable, so the reason shows.
+                <Button
+                  size="sm"
+                  aria-disabled="true"
+                  title={REPORT_FORM_NEEDS_FORM_TYPES}
+                  className="cursor-not-allowed opacity-50"
+                >
+                  <Plus />
+                  <span>إنشاء ضبط</span>
+                  <span className="sr-only">{REPORT_FORM_NEEDS_FORM_TYPES}</span>
+                </Button>
+              ) : (
+                <Button size="sm" onClick={() => setIsCreateOpen(true)}>
+                  <Plus />
+                  <span>إنشاء ضبط</span>
+                </Button>
+              ))}
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

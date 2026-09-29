@@ -7,6 +7,7 @@ import { useReportStatistics } from '@/hooks/reports/use-report-statistics';
 import { useReportOptions } from '@/hooks/reports/use-report-options';
 import { useFormTypes } from '@/hooks/form-types/use-form-types';
 import { useUsers } from '@/hooks/users/use-users';
+import { useCan } from '@/hooks/auth/use-can';
 import { StatCard } from '@/components/admin/dashboard/stat-card';
 import {
   ReportsTrendChart,
@@ -43,21 +44,28 @@ function buildLastMonths(count: number): { key: string; label: string }[] {
 }
 
 export function DashboardPage() {
+  const can = useCan();
+  const canViewFormTypes = can('FORM_TYPES', 'VIEW');
+  const canViewUsers = can('USERS', 'VIEW');
   const reportsQuery = useReports({ size: 500, sort: 'reportDate,desc' });
-  const formTypesQuery = useFormTypes();
-  const usersQuery = useUsers();
+  const formTypesQuery = useFormTypes({ enabled: canViewFormTypes });
+  const usersQuery = useUsers({ enabled: canViewUsers });
 
   const [statsRange, setStatsRange] = useState<StatisticsRange>({});
   const statsQuery = useReportStatistics(statsRange);
   const { labels } = useReportOptions();
 
-  const isPending = reportsQuery.isPending || formTypesQuery.isPending || usersQuery.isPending;
+  // A query the role can't run stays disabled — it neither holds the page back nor fails it.
+  const isPending =
+    reportsQuery.isPending ||
+    (canViewFormTypes && formTypesQuery.isPending) ||
+    (canViewUsers && usersQuery.isPending);
   const isError = reportsQuery.isError || formTypesQuery.isError || usersQuery.isError;
 
   const refetchAll = () => {
     void reportsQuery.refetch();
-    void formTypesQuery.refetch();
-    void usersQuery.refetch();
+    if (canViewFormTypes) void formTypesQuery.refetch();
+    if (canViewUsers) void usersQuery.refetch();
   };
 
   const reportsData = reportsQuery.data?.content;
@@ -138,18 +146,22 @@ export function DashboardPage() {
                   icon={<TrendingUp />}
                   accent="gold"
                 />
-                <StatCard
-                  label="نماذج الضبوط"
-                  value={<AnimatedNumber value={totalFormTypes} />}
-                  icon={<FolderTree />}
-                  accent="umber"
-                />
-                <StatCard
-                  label="المستخدمون"
-                  value={<AnimatedNumber value={totalUsers} />}
-                  icon={<Users />}
-                  accent="forest"
-                />
+                {canViewFormTypes && (
+                  <StatCard
+                    label="نماذج الضبوط"
+                    value={<AnimatedNumber value={totalFormTypes} />}
+                    icon={<FolderTree />}
+                    accent="umber"
+                  />
+                )}
+                {canViewUsers && (
+                  <StatCard
+                    label="المستخدمون"
+                    value={<AnimatedNumber value={totalUsers} />}
+                    icon={<Users />}
+                    accent="forest"
+                  />
+                )}
               </motion.div>
 
               <motion.div

@@ -58,9 +58,9 @@ export interface ReportRequest {
   /** Must be a leaf form type (childrenCount === 0), otherwise 400. */
   formTypeId: number;
   result: ReportResult;
-  /** 'YYYY-MM-DD'. Defaults to today on create; keeps the old value on update if omitted. */
-  reportDate?: string;
-  /** null (never 0) for a report with no crime. */
+  /** 'YYYY-MM-DD' */
+  reportDate: string;
+  /** null (never 0) for a report with no crime; when set, crimePlace and crimeDate are required. */
   crimeTypeId: number | null;
   searchBroadcast: SearchBroadcast | null;
   prosecutionPermission: boolean;
@@ -116,7 +116,7 @@ export interface ReportFilterParams {
   type?: ReportType;
   crimeTypeId?: number;
   result?: ReportResult;
-  creatorId?: string;
+  creatorId?: number;
   /** 'YYYY-MM-DD', inclusive */
   from?: string;
   /** 'YYYY-MM-DD', inclusive */

@@ -1,4 +1,4 @@
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -6,17 +6,23 @@ import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
+import { RoleSelect } from '@/components/admin/users/role-select';
 import { useCreateUser } from '@/hooks/users/use-create-user';
+import { useRoles } from '@/hooks/roles/use-roles';
+import { useCan } from '@/hooks/auth/use-can';
 import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
 
-const createUserSchema = z.object({
+const baseSchema = z.object({
   fullName: z.string().min(1, 'هذا الحقل مطلوب'),
   email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('أدخل بريدًا إلكترونيًا صالحًا'),
   password: z.string().min(8, 'يجب ألا تقل كلمة المرور عن 8 أحرف'),
+  roleId: z.string(),
 });
 
-type CreateUserFormValues = z.infer<typeof createUserSchema>;
+const withRoleSchema = baseSchema.extend({ roleId: z.string().min(1, 'اختر الدور') });
+
+type CreateUserFormValues = z.infer<typeof baseSchema>;
 
 interface CreateUserDialogProps {
   open: boolean;
@@ -24,38 +30,44 @@ interface CreateUserDialogProps {
 }
 
 /**
- * Creates a user via POST /auth/register. The backend always assigns
- * the USER role server-side — there is no way to create an ADMIN from
- * the UI (or the API), so no role field is shown here.
+ * With ROLES:VIEW the role is picked here (POST /users). Without it the
+ * roles can't be listed, so the account is created with the built-in
+ * «مستخدم» role instead (POST /auth/register).
  */
 export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) {
+  const canPickRole = useCan()('ROLES', 'VIEW');
+  const { data: roles = [], isPending: rolesPending } = useRoles({ enabled: canPickRole && open });
   const mutation = useCreateUser();
   const {
     register,
+    control,
     handleSubmit,
     reset,
     setError,
     formState: { errors },
   } = useForm<CreateUserFormValues>({
-    resolver: zodResolver(createUserSchema),
-    defaultValues: { fullName: '', email: '', password: '' },
+    resolver: zodResolver(canPickRole ? withRoleSchema : baseSchema),
+    defaultValues: { fullName: '', email: '', password: '', roleId: '' },
   });
 
-  const onSubmit = handleSubmit((values) => {
-    mutation.mutate(values, {
-      onSuccess: () => {
-        reset();
-        onOpenChange(false);
+  const onSubmit = handleSubmit(({ roleId, ...values }) => {
+    mutation.mutate(
+      { ...values, roleId: canPickRole ? Number(roleId) : undefined },
+      {
+        onSuccess: () => {
+          reset();
+          onOpenChange(false);
+        },
+        onError: (error) => {
+          if (error instanceof ApiError && error.status === 400) {
+            const body = error.details as ApiErrorBody | undefined;
+            Object.entries(body?.fieldErrors ?? {}).forEach(([field, message]) => {
+              setError(field as keyof CreateUserFormValues, { message });
+            });
+          }
+        },
       },
-      onError: (error) => {
-        if (error instanceof ApiError && error.status === 400) {
-          const body = error.details as ApiErrorBody | undefined;
-          Object.entries(body?.fieldErrors ?? {}).forEach(([field, message]) => {
-            setError(field as keyof CreateUserFormValues, { message });
-          });
-        }
-      },
-    });
+    );
   });
 
   return (
@@ -69,7 +81,9 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       <DialogContent>
         <DialogTitle>مستخدم جديد</DialogTitle>
         <DialogDescription>
-          سيُنشأ الحساب بدور "مستخدم"؛ يمكن تعديل بيانات الضبط لاحقًا من القائمة.
+          {canPickRole
+            ? 'يمكن تعديل الدور وبيانات الضبط لاحقًا من القائمة.'
+            : 'سيُنشأ الحساب بدور "مستخدم"؛ يمكن تعديل بيانات الضبط لاحقًا من القائمة.'}
         </DialogDescription>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">
           <FormField
@@ -112,6 +126,24 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
               {...register('password')}
             />
           </FormField>
+          {canPickRole && (
+            <FormField label="الدور" htmlFor="roleId" error={errors.roleId?.message} required>
+              <Controller
+                control={control}
+                name="roleId"
+                render={({ field }) => (
+                  <RoleSelect
+                    id="roleId"
+                    roles={roles}
+                    value={field.value}
+                    onChange={field.onChange}
+                    invalid={Boolean(errors.roleId)}
+                    disabled={rolesPending}
+                  />
+                )}
+              />
+            </FormField>
+          )}
           <Button type="submit" className="w-full" disabled={mutation.isPending}>
             {mutation.isPending ? 'جاري الإنشاء…' : 'إنشاء المستخدم'}
           </Button>
