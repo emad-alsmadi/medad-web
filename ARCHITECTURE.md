@@ -56,7 +56,7 @@ page in `lazy-pages.ts`, and add its route in `route-config.tsx`.
 3. **All routes are lazy-loaded** via `routes/lazy-pages.ts`.
 4. **`components/ui` has zero business logic** — only generic,
    Radix-based (or plain native-element) primitives.
-5. **Reports pagination uses the real Spring `Page<T>`** (`types/api.ts`)
+5. **Report search is server-side** (`?search=` on `GET /reports` and the export), kept in the URL like the other filters. **Reports pagination uses the real Spring `Page<T>`** (`types/api.ts`)
    — `content`, `totalElements`, `totalPages`, `number` (0-based),
    `size`, `first`, `last`. Users (`GET /users`) and report types
    (`GET /report-types`) are plain arrays, not paginated — don't force

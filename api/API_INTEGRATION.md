@@ -46,7 +46,7 @@ Authorization: Bearer <token>
 }
 ```
 
-- `fullName` و`email` (بصيغة بريد صحيحة) و`password` مطلوبة، وإلا يعود `400`.
+- `fullName` و`email` (بصيغة بريد صحيحة) و`password` (ثمانية أحرف على الأقل) مطلوبة، وإلا يعود `400`.
 - `reportInfo` **اختياري**. إن أُرسل فيجب أن تكون حقوله الخمسة كلها غير فارغة، وإلا يعود `400`.
 - الاستجابة `201` بجسم من نوع `UserResponse` (انظر القسم 7).
 
@@ -80,6 +80,7 @@ Authorization: Bearer <token>
 
 - `role` كائن `{ id, name, builtIn }` (كان نصاً `"ADMIN"`/`"USER"`)، و`permissions` ما يستطيعه المستخدم (القسم 4).
 - بيانات خاطئة تُرجع `401` بجسم خطأ رسالته `Bad credentials`.
+- بعد محاولات فاشلة كثيرة يعود `429` مع ترويسة `Retry-After` (القسم 2.7).
 
 ### 2.3 تجديد التوكن
 
@@ -121,6 +122,32 @@ Authorization: Bearer <token>
 |---|---|---|
 | `admin@gmail.com` | `12345678` | مدير النظام (`ADMIN`) |
 
+### 2.6 تغيير كلمة المرور
+
+`PUT /api/v1/users/me/password` — لأي مستخدم مسجّل، لكلمة مروره هو.
+
+```json
+{ "currentPassword": "12345678", "newPassword": "new-pass-2026" }
+```
+
+- `newPassword` ثمانية أحرف على الأقل، والحد نفسه عند إنشاء الحسابات.
+- كلمة المرور الحالية الخاطئة تُرجع `400` برسالة `Current password is incorrect`، وتُحسب محاولةً فاشلة (القسم 2.7).
+- عند النجاح **تبطل كل توكنات المستخدم السابقة**، access وrefresh وفي كل الأجهزة، فتخرج جلساته الأخرى بـ`401` عند طلبها التالي.
+- الاستجابة `200` بجسم `LoginResponse` مثل استجابة الدخول، وفيه توكنات جديدة لهذه الجلسة: **خزّنها مكان القديمة**، وإلا خرجت هذه الجلسة أيضاً.
+
+### 2.7 حد محاولات الدخول
+
+| الحد | ما يحدث |
+|---|---|
+| **5 محاولات فاشلة للحساب نفسه** خلال **15 دقيقة** | يُرفض الدخول إلى هذا الحساب بـ`429` من أي عنوان، حتى بكلمة المرور الصحيحة |
+| **20 محاولة فاشلة من العنوان (IP) نفسه** خلال 15 دقيقة | يُرفض كل دخول من هذا العنوان بـ`429`، لأي حساب |
+
+- الرفض ينتهي حين تخرج أقدم محاولة فاشلة من نافذة الـ15 دقيقة.
+- الدخول الناجح لا يُحسب أبداً، فلا يتأثر من يدخلون من شبكة واحدة، ويمسح عدّاد حسابه.
+- كلمة المرور الحالية الخاطئة في `PUT /users/me/password` تُحسب محاولةً فاشلة للحساب.
+- استجابة `429` فيها ترويسة `Retry-After` بعدد الثواني المتبقية، ورسالة مثل `Too many failed attempts; try again in 12 minute(s)`. أظهرها للمستخدم وعطّل زر الدخول حتى ينقضي الوقت.
+- الأرقام قابلة للتعديل في `application.properties` تحت `app.security.login.*`. العدّادات في الذاكرة، فتبدأ من الصفر مع كل إقلاع.
+
 ---
 
 ## 3. شكل الأخطاء الموحّد
@@ -145,11 +172,12 @@ Authorization: Bearer <token>
 
 | الكود | متى يظهر |
 |---|---|
-| `400` | فشل التحقق، JSON غير صالح، قيمة parameter غير صالحة (مثل تاريخ خاطئ)، محاولة جعل نوع أباً لنفسه أو لأحد أسلافه |
+| `400` | فشل التحقق، JSON غير صالح، قيمة parameter غير صالحة (مثل تاريخ خاطئ)، جعل نوع فرعي أباً لغيره أو نقل نوع رئيسي له فروع تحت نوع آخر |
 | `401` | توكن غير صالح/منتهٍ، بيانات دخول خاطئة، أو حساب معطّل (`User is disabled`) |
 | `403` | غياب التوكن (جسم فارغ)، أو دور لا يمنح الصلاحية (`Access denied`)، أو محاولة منح صلاحيات أو التصرف بمستخدم يملك صلاحيات لا يملكها المنفّذ (رسالة توضّح السبب، القسم 4.4) |
 | `404` | سجل غير موجود (تقرير، نوع نموذج، نوع جرم، مستخدم، دور، أو `formTypeId`/`crimeTypeId`/`parentId`/`roleId` غير موجود في الطلب) |
-| `409` | تكرار قيمة فريدة (`reportNumber`، `name` لنوع النموذج أو نوع الجرم أو الدور، `email`)، حذف سجل مرتبط بسجلات أخرى، **تعديل/حذف ضبط نتيجته `CLOSED`** (تم ختم الضبط)، تعديل دور مدير النظام أو حذف دور مدمج أو دور مسند لمستخدمين، أو إزالة آخر مدير نظام مفعّل أو تعطيله |
+| `409` | تكرار قيمة فريدة (`reportNumber`، `name` لنوع النموذج أو نوع الجرم أو الدور، `email`)، حذف سجل مرتبط بسجلات أخرى، **تعديل/حذف ضبط نتيجته `CLOSED`** (تم ختم الضبط)، تعديل دور مدير النظام أو حذف دور مدمج أو دور مسند لمستخدمين، إزالة آخر مدير نظام مفعّل أو تعطيله، أو وضع فروع تحت نوع مسجّلة عليه ضبوط |
+| `429` | محاولات فاشلة كثيرة للدخول أو لكلمة المرور الحالية (القسم 2.7)، مع ترويسة `Retry-After` |
 | `500` | خطأ غير متوقع |
 
 ---
@@ -173,7 +201,7 @@ Authorization: Bearer <token>
 
 | الصلاحية | ما يستطيعه | في الواجهة | يحتاج معها | الـ endpoints |
 |---|---|---|---|---|
-| `REPORTS:VIEW` | عرض قائمة الضبوط والبحث فيها وفتح أي ضبط، وطباعة ورقة الضبط، وعرض الإحصائيات، وتصدير سجل الضبوط إلى Excel | رابط «الضبوط» وصفحة الضبط، زر الطباعة، صفحة الإحصائيات، زر تصدير Excel | — | `GET /reports`، `/reports/{id}`، `/reports/{id}/pdf`، `/reports/statistics`، `/reports/export` |
+| `REPORTS:VIEW` | عرض قائمة الضبوط والبحث فيها وفتح أي ضبط، وطباعة ورقة الضبط، وعرض الإحصائيات، وتصدير سجل الضبوط إلى Excel | رابط «الضبوط» وصفحة الضبط، زر الطباعة، صفحة الإحصائيات، زر تصدير Excel | — | `GET /reports`، `/reports/all`، `/reports/{id}`، `/reports/{id}/pdf`، `/reports/statistics`، `/reports/export` |
 | `REPORTS:CREATE` | تنظيم ضبط جديد، ويُسجَّل المستخدم منظِّماً له | زر «ضبط جديد» ونموذج الإضافة | `REPORTS:VIEW`، `FORM_TYPES:VIEW`، `CRIME_TYPES:VIEW` | `POST /reports` |
 | `REPORTS:UPDATE` | تعديل أي ضبط وتغيير نتيجته، ومن ذلك ختمه؛ والضبط المختوم لا يُعدَّل بعد ذلك | زرّا «تعديل» و«تغيير النتيجة»؛ أخفِهما إن كانت النتيجة `CLOSED` | `REPORTS:VIEW`، `FORM_TYPES:VIEW`، `CRIME_TYPES:VIEW` | `PUT /reports/{id}`، `PATCH /reports/{id}/result` |
 | `REPORTS:DELETE` | حذف أي ضبط لم يُختم | زر «حذف»؛ أخفِه إن كانت النتيجة `CLOSED` | `REPORTS:VIEW` | `DELETE /reports/{id}` |
@@ -216,7 +244,7 @@ Authorization: Bearer <token>
 | `ROLES:UPDATE` | تعديل اسم الدور وصلاحياته ضمن صلاحياته هو، عدا دور مدير النظام | تعديل اسم الدور ومصفوفته؛ عطّله لدور مدير النظام (`builtIn: "ADMIN"`) | `ROLES:VIEW` | `PUT /roles/{id}` |
 | `ROLES:DELETE` | حذف دور غير مسند لأي مستخدم، عدا الأدوار المدمجة | زر «حذف» على الدور؛ أخفِه للأدوار المدمجة (`builtIn` ليس `null`) | `ROLES:VIEW` | `DELETE /roles/{id}` |
 
-**دون أي صلاحية** يستطيع كل مستخدم مسجّل: عرض حسابه (`GET /users/me`)، وتعيين معلومات موقعه (`PUT /users/me/report-info`)، وجلب قوائم الخيارات (`GET /reports/options`، `GET /roles/options`).
+**دون أي صلاحية** يستطيع كل مستخدم مسجّل: عرض حسابه (`GET /users/me`)، وتغيير كلمة مروره (`PUT /users/me/password`)، وتعيين معلومات موقعه (`PUT /users/me/report-info`)، وجلب قوائم الخيارات (`GET /reports/options`، `GET /roles/options`).
 
 **قد يُرفض الطلب رغم الصلاحية**: `403` حين يتجاوز الدور المعنيّ صلاحيات المنفّذ (القسم 4.4)، و`409` لضبط مختوم أو لآخر مدير نظام أو لسجل تستخدمه سجلات أخرى. أظهر رسالة الخطأ كما هي.
 
@@ -350,6 +378,7 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 | `POST` | `/users` | `USERS:CREATE` | إنشاء حساب بدور محدد | `201` `UserResponse` |
 | `PUT` | `/users/{id}/role` | `USERS:UPDATE` | نقل المستخدم إلى دور آخر | `UserResponse` |
 | `PUT` | `/users/{id}/enabled` | `USERS:UPDATE` | **تعطيل الحساب أو تفعيله**: المعطّل يفقد الوصول فوراً، توكناته الحالية ضمناً | `UserResponse` |
+| `PUT` | `/users/me/password` | — | تغيير كلمة مروره (القسم 2.6) | `LoginResponse` بتوكنات جديدة |
 | `PUT` | `/users/me/report-info` | — | تعيين معلومات الموقع للمستخدم الحالي | `UserResponse` |
 | `PUT` | `/users/{id}/report-info` | `USERS:UPDATE` | تعيينها لأي مستخدم | `UserResponse` |
 | `DELETE` | `/users/{id}` | `USERS:DELETE` | حذف | `204` أو `404`، أو `409` لآخر مدير نظام أو لمستخدم له تقارير |
@@ -368,7 +397,7 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 }
 ```
 
-`fullName` و`email` و`password` و`roleId` مطلوبة، و`reportInfo` اختياري. جسم `PUT /users/{id}/role`: `{ "roleId": 3 }`. جسم `PUT /users/{id}/enabled`: `{ "enabled": false }` للتعطيل، و`true` للتفعيل.
+`fullName` و`email` و`password` (ثمانية أحرف على الأقل) و`roleId` مطلوبة، و`reportInfo` اختياري. جسم `PUT /users/{id}/role`: `{ "roleId": 3 }`. جسم `PUT /users/{id}/enabled`: `{ "enabled": false }` للتعطيل، و`true` للتفعيل.
 
 في `UserResponse` صار `role` كائناً `{ "id": 3, "name": "ضابط مخفر", "builtIn": null }`. أما `permissions` فلا يظهر إلا في `GET /users/me`.
 
@@ -400,12 +429,12 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 
 > كانت هذه الأنواع تُسمّى «نوع الضبط» تحت المسار `/report-types` وحقل `reportTypeId`. أصبحت الآن **نوع نموذج الضبط** (`/form-types`، `formTypeId`، `formType`)، بينما **نوع الضبط** صار حقلاً ثابتاً `type` في التقرير نفسه (القسم 7.1).
 
-الأنواع تشكّل **شجرة**: كل نوع له `parentId` اختياري.
+الأنواع على **مستويين**: **نوع رئيسي** (بلا `parentId`) يجمع **أنواعاً فرعية**، والضبوط تُنظَّم على الأنواع التي ليس تحتها فروع.
 
 | Method | Path | الصلاحية | الوصف | الاستجابة |
 |---|---|---|---|---|
-| `GET` | `/form-types` | `FORM_TYPES:VIEW` | قائمة مسطّحة (كل نوع مع `parentId`) | `FormTypeResponse[]` |
-| `GET` | `/form-types/tree` | `FORM_TYPES:VIEW` | الجذور مع `children` متداخلة إلى أي عمق | `FormTypeResponse[]` |
+| `GET` | `/form-types` | `FORM_TYPES:VIEW` | قائمة مسطّحة (كل نوع مع `parentId`)، **مع بحث وفلاتر** (تحت الجدول) | `FormTypeResponse[]` |
+| `GET` | `/form-types/tree` | `FORM_TYPES:VIEW` | الأنواع الرئيسية مع فروعها في `children`، **وتقبل `search`** | `FormTypeResponse[]` |
 | `GET` | `/form-types/roots` | `FORM_TYPES:VIEW` | **الأنواع الرئيسية وحدها** مع عدد فروع كل نوع | `FormTypeResponse[]` |
 | `GET` | `/form-types/{id}` | `FORM_TYPES:VIEW` | نوع واحد | `FormTypeResponse` |
 | `GET` | `/form-types/{id}/children` | `FORM_TYPES:VIEW` | الأبناء المباشرون | `FormTypeResponse[]` |
@@ -420,13 +449,33 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 ```
 
 - `name` مطلوب وفريد (حتى 100 حرف)، `witnessNumber` مطلوب وعدد صحيح ≥ 0.
-- `parentId` اختياري. غيابه (أو `null`) يعني نوعاً جذرياً. في `PUT` غيابه **يحوّل النوع إلى جذر**، فأرسله دائماً إن أردت إبقاء الأب.
-- جعل النوع أباً لنفسه أو وضعه تحت أحد أحفاده يُرجع `400`.
+- `parentId` اختياري. غيابه (أو `null`) يعني نوعاً رئيسياً. في `PUT` غيابه **يحوّل النوع إلى رئيسي**، فأرسله دائماً إن أردت إبقاء الأب.
+- **النوع الفرعي لا يصبح أباً**: `parentId` يجب أن يشير إلى نوع رئيسي، وإلا `400`.
+- النوع الرئيسي الذي تحته فروع لا يُنقل تحت نوع آخر (`400`)، لأنه سيصير فرعياً له فروع.
+- النوع المسجّلة عليه ضبوط لا توضع تحته فروع (`409`)، لأن ضبوطه ستصير تحت نوع رئيسي.
+- هذه القواعد تُفحص حين يتغيّر الأب فقط: تعديل الاسم أو عدد الشهود مع الأب نفسه يمر دائماً. نقل نوع فرعي من نوع رئيسي إلى آخر مسموح.
 
 `childrenCount` يأتي مع كل نوع في `/form-types`، `/roots`، `/tree`، `/{id}` و`/{id}/children`:
 
 - **أكبر من صفر** ← نوع رئيسي (تصنيف). لا يُقبل في `formTypeId`؛ ادخل إلى فروعه.
 - **صفر** ← نوع فرعي قابل للاختيار عند إنشاء ضبط، وله نموذج.
+
+**البحث والفلترة** في `GET /form-types` (تُجمع كلها بـ«و»):
+
+| Parameter | الوصف |
+|---|---|
+| `search` | بحث في الاسم وفق القواعد أدناه |
+| `parentId` | الأنواع الفرعية لنوع رئيسي محدد |
+| `selectable` | `true`: الأنواع التي يُنظَّم عليها ضبط (ليس تحتها فروع)، `false`: الأنواع الرئيسية |
+
+مثلاً `GET /form-types?selectable=true&search=مكتومه` لحقل «نموذج الضبط» في شاشة الضبط، مع `parentId` في كل نتيجة لعرض نوعها الرئيسي.
+
+وفي `GET /form-types/tree?search=…` تبقى الأنواع المطابقة **بكل ما تحتها**، والأنواع الرئيسية التي فوقها **بالفروع المطابقة وحدها**، ويبقى `childrenCount` العدد الكامل.
+
+**قواعد `search`**، وهي نفسها في أنواع الجرم (القسم 6.3):
+
+- كل كلمة يجب أن تظهر في الاسم، بأي ترتيب، ولو جزءاً من كلمة. تُعتمد أول 10 كلمات.
+- لا تُفرّق أشكال الهمزة (`أ إ آ ا`)، ولا `ة` و`ه`، ولا `ى` و`ي`، ولا التشكيل والتطويل. فـ`الاداريه` تجد «الضبوط الإدارية».
 
 مثال استجابة `/form-types/roots` (كل ما تحتاجه شاشة «اختر نموذج الضبط» في طلب واحد):
 
@@ -511,7 +560,7 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 
 | Method | Path | الصلاحية | الوصف | الاستجابة |
 |---|---|---|---|---|
-| `GET` | `/crime-types` | `CRIME_TYPES:VIEW` | كل الأنواع بترتيب الإضافة | `CrimeTypeResponse[]` |
+| `GET` | `/crime-types` | `CRIME_TYPES:VIEW` | كل الأنواع بترتيب الإضافة؛ و`?search=` للبحث في الاسم بقواعد القسم 6 | `CrimeTypeResponse[]` |
 | `GET` | `/crime-types/{id}` | `CRIME_TYPES:VIEW` | نوع واحد | `CrimeTypeResponse` أو `404` |
 | `POST` | `/crime-types` | `CRIME_TYPES:CREATE` | إنشاء | `201` `CrimeTypeResponse` |
 | `PUT` | `/crime-types/{id}` | `CRIME_TYPES:UPDATE` | تعديل | `CrimeTypeResponse` |
@@ -530,9 +579,10 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 
 | Method | Path | الصلاحية | الوصف | الاستجابة |
 |---|---|---|---|---|
-| `GET` | `/reports` | `REPORTS:VIEW` | قائمة مُرقّمة مع فلاتر | `Page<ReportResponse>` |
+| `GET` | `/reports` | `REPORTS:VIEW` | قائمة مُرقّمة مع بحث وفلاتر (القسم 7.3) | `Page<ReportResponse>` |
+| `GET` | `/reports/all` | `REPORTS:VIEW` | **كل الضبوط المطابقة في قائمة واحدة دون ترقيم**، بالبحث والفلاتر نفسها (القسم 7.3) | `ReportResponse[]` |
 | `GET` | `/reports/statistics?from=&to=` | `REPORTS:VIEW` | **إحصائيات** عدد الضبوط حسب النوع والنموذج والجرم والاكتشاف والنتيجة (القسم 7.7) | `ReportStatisticsResponse` |
-| `GET` | `/reports/export` | `REPORTS:VIEW` | **سجل الضبوط كملف Excel** بفلاتر القائمة نفسها (القسم 7.8) | `.xlsx` |
+| `GET` | `/reports/export` | `REPORTS:VIEW` | **سجل الضبوط كملف Excel** ببحث القائمة وفلاترها (القسم 7.8) | `.xlsx` |
 | `GET` | `/reports/options` | — | قيم الحقول الثابتة (نوع الضبط، إذاعة البحث، النتيجة) مع تسمياتها العربية | `ReportOptionsResponse` |
 | `GET` | `/reports/{id}` | `REPORTS:VIEW` | تقرير واحد | `ReportResponse` أو `404` |
 | `POST` | `/reports` | `REPORTS:CREATE` | إنشاء؛ `creator` يُضبط تلقائياً من التوكن | `201` `ReportResponse` |
@@ -659,12 +709,19 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 
 فالانتقال مسموح بين «قيد التحقيق» و«استكمال التحقيق» في الاتجاهين، ومنهما إلى «تم ختم الضبط»، ولا خروج من «تم ختم الضبط».
 
-### 7.3 معاملات الاستعلام في `GET /reports`
+### 7.3 البحث والفلترة: `GET /reports` و`GET /reports/all`
+
+الاثنان يقبلان معاملات البحث والفلاتر نفسها، ويجمعانها كلها بـ«و». الفرق:
+
+- `GET /reports` يُرجع **صفحة** (`Page<ReportResponse>`، القسم 7.4)، وهو الأنسب لتصفّح عدد كبير.
+- `GET /reports/all` يُرجع **كل النتائج في مصفوفة واحدة** (`ReportResponse[]`) دون `page` و`size`، ويقبل `sort`. مناسب لنتائج بحث محدودة أو لجدول يرقّم في الواجهة. مع قاعدة كبيرة وبدون فلاتر يكون الرد ثقيلاً، فاستخدم عندها `GET /reports`.
+- `GET /reports/export` يقبل البحث والفلاتر نفسها أيضاً (القسم 7.8).
 
 | Parameter | النوع | الوصف |
 |---|---|---|
-| `page` | int | رقم الصفحة، يبدأ من `0` (افتراضي `0`) |
-| `size` | int | حجم الصفحة (افتراضي `20`) |
+| `search` | string | **بحث نصي**، التفاصيل تحت الجدول |
+| `page` | int | رقم الصفحة، يبدأ من `0` (افتراضي `0`). في `/reports` فقط |
+| `size` | int | حجم الصفحة (افتراضي `20`). في `/reports` فقط |
 | `sort` | string | مثل `reportDate,desc` أو `reportNumber,asc`. الافتراضي `reportDate,desc`. يمكن تكراره |
 | `formTypeId` | long | تقارير نموذج محدد (لا يشمل الأنواع الفرعية) |
 | `type` | enum | نوع الضبط، مثل `CRIMINAL` |
@@ -678,7 +735,17 @@ function grant(p: Permissions, option: PermissionOption): Permissions {
 
 ```
 GET /api/v1/reports?type=CRIMINAL&result=UNDER_INVESTIGATION&from=2026-01-01&to=2026-12-31&page=0&size=10&sort=reportDate,desc
+GET /api/v1/reports/all?search=إبراهيم قاسم&crimeTypeId=21&sort=reportDate,desc
 ```
+
+**`search`**:
+
+- يُبحث فيه في: رقم الضبط، واسم المدعي والمدعى عليه، ورقمهما الوطني، ومكان الجرم، والملخص.
+- يُقسَم على المسافات، و**كل كلمة** يجب أن تظهر في أحد هذه الحقول ولو في حقلين مختلفين. لذلك `إبراهيم قاسم` يجد «إبراهيم بن إبراهيم قاسم»، وترتيب الكلمات لا يهم.
+- المطابقة جزئية (`محم` يجد «محمد»)، و`%` و`_` تُعامَلان كحرفين عاديين.
+- بخلاف بحث الأنواع (القسم 6)، الحروف هنا تُطابَق كما كُتبت: `احمد` لا يجد «أحمد».
+- تُعتمد أول 10 كلمات فقط. البحث الفارغ أو الغائب لا يُطبَّق.
+- رمّز القيمة في الرابط؛ axios يفعل ذلك تلقائياً عبر `params`.
 
 قيمة تاريخ أو enum غير صالحة تُرجع `400` برسالة `Invalid value for parameter 'from': …`.
 
@@ -920,7 +987,7 @@ const rows = stats.byCrimeType.map((c) => ({
 
 ### 7.8 تصدير سجل الضبوط إلى Excel — `GET /api/v1/reports/export`
 
-يُرجع ملف `.xlsx` (سجل الضبوط) لكل الضبوط المطابقة، **بمعاملات الفلترة نفسها** لـ `GET /reports` (القسم 7.3) عدا الترقيم والترتيب: `formTypeId`، `type`، `crimeTypeId`، `result`، `creatorId`، `from`، `to`. بدون أي معامل تُصدَّر كل الضبوط.
+يُرجع ملف `.xlsx` (سجل الضبوط) لكل الضبوط المطابقة، **بمعاملات الفلترة نفسها** لـ `GET /reports` (القسم 7.3) عدا الترقيم والترتيب: `search`، `formTypeId`، `type`، `crimeTypeId`، `result`، `creatorId`، `from`، `to`. بدون أي معامل تُصدَّر كل الضبوط.
 
 ```
 GET /api/v1/reports/export?from=2026-03-01&to=2026-03-31
@@ -1044,6 +1111,11 @@ export interface UserEnabledRequest {
   enabled: boolean;
 }
 
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;               // ثمانية أحرف على الأقل
+}
+
 export interface LoginResponse {
   id: number;
   fullName: string;
@@ -1062,7 +1134,13 @@ export interface RefreshTokenResponse {
 export interface FormTypeRequest {
   name: string;
   witnessNumber: number;
-  parentId?: number | null;
+  parentId?: number | null;          // نوع رئيسي فقط (القسم 6)
+}
+
+export interface FormTypeFilters {
+  search?: string;
+  parentId?: number;
+  selectable?: boolean;              // true: ما يُنظَّم عليه ضبط، false: الأنواع الرئيسية
 }
 
 export interface FormTypeResponse {
@@ -1236,8 +1314,9 @@ export interface ReportStatisticsResponse {
 }
 
 export interface ReportFilters {
-  page?: number;
-  size?: number;
+  search?: string;     // بحث نصي (القسم 7.3)
+  page?: number;       // في /reports فقط
+  size?: number;       // في /reports فقط
   sort?: string;       // 'reportDate,desc'
   formTypeId?: number;
   type?: ReportType;
@@ -1330,7 +1409,7 @@ export { storage as tokenStorage };
 ```ts
 // src/api/auth.ts
 import { api, tokenStorage } from './client';
-import type { LoginResponse, RegisterRequest, UserResponse } from './types';
+import type { ChangePasswordRequest, LoginResponse, RegisterRequest, UserResponse } from './types';
 
 export async function login(email: string, password: string) {
   const { data } = await api.post<LoginResponse>('/auth/login', { email, password });
@@ -1341,6 +1420,13 @@ export async function login(email: string, password: string) {
 // يحتاج مستخدماً مسجّلاً يملك USERS:CREATE؛ لإنشاء حساب بدور محدد استخدم POST /users
 export async function register(body: RegisterRequest) {
   const { data } = await api.post<UserResponse>('/auth/register', body);
+  return data;
+}
+
+// يُبطل كل توكنات المستخدم السابقة، فتُخزَّن التوكنات الجديدة لتبقى هذه الجلسة
+export async function changePassword(body: ChangePasswordRequest) {
+  const { data } = await api.put<LoginResponse>('/users/me/password', body);
+  tokenStorage.set(data.token, data.refreshToken);
   return data;
 }
 
@@ -1359,6 +1445,8 @@ import type {
 export const reportsApi = {
   list: (filters: ReportFilters = {}) =>
     api.get<Page<ReportResponse>>('/reports', { params: filters }).then((r) => r.data),
+  all: (filters: Omit<ReportFilters, 'page' | 'size'> = {}) =>
+    api.get<ReportResponse[]>('/reports/all', { params: filters }).then((r) => r.data),
   options: () => api.get<ReportOptionsResponse>('/reports/options').then((r) => r.data),
   exportExcel: (filters: Omit<ReportFilters, 'page' | 'size' | 'sort'> = {}) =>
     api.get<Blob>('/reports/export', { params: filters, responseType: 'blob' }).then((r) => r.data),
@@ -1389,12 +1477,16 @@ export async function openReportPdf(id: number, copy?: number) {
 ```ts
 // src/api/formTypes.ts
 import { api } from './client';
-import type { ReportTemplateRequest, ReportTemplateResponse, FormTypeRequest, FormTypeResponse } from './types';
+import type {
+  FormTypeFilters, ReportTemplateRequest, ReportTemplateResponse, FormTypeRequest, FormTypeResponse,
+} from './types';
 
 export const formTypesApi = {
-  list: () => api.get<FormTypeResponse[]>('/form-types').then((r) => r.data),
+  list: (filters: FormTypeFilters = {}) =>
+    api.get<FormTypeResponse[]>('/form-types', { params: filters }).then((r) => r.data),
   roots: () => api.get<FormTypeResponse[]>('/form-types/roots').then((r) => r.data),
-  tree: () => api.get<FormTypeResponse[]>('/form-types/tree').then((r) => r.data),
+  tree: (search?: string) =>
+    api.get<FormTypeResponse[]>('/form-types/tree', { params: { search } }).then((r) => r.data),
   children: (id: number) =>
     api.get<FormTypeResponse[]>(`/form-types/${id}/children`).then((r) => r.data),
   create: (body: FormTypeRequest) =>
@@ -1417,7 +1509,8 @@ import { api } from './client';
 import type { CrimeTypeRequest, CrimeTypeResponse } from './types';
 
 export const crimeTypesApi = {
-  list: () => api.get<CrimeTypeResponse[]>('/crime-types').then((r) => r.data),
+  list: (search?: string) =>
+    api.get<CrimeTypeResponse[]>('/crime-types', { params: { search } }).then((r) => r.data),
   get: (id: number) => api.get<CrimeTypeResponse>(`/crime-types/${id}`).then((r) => r.data),
   create: (body: CrimeTypeRequest) =>
     api.post<CrimeTypeResponse>('/crime-types', body).then((r) => r.data),
@@ -1522,6 +1615,8 @@ curl -s -X PUT http://localhost:8080/api/v1/users/5/role \
 - [ ] التأكد أن origin الواجهة ضمن `app.cors.allowed-origins` (الافتراضي يشمل المنافذ 3000 و5173).
 - [ ] تخزين `token` و`refreshToken` بعد الدخول، وإرسال `Authorization: Bearer` مع كل طلب محمي.
 - [ ] معالجة `401` بالتجديد ثم إعادة المحاولة مرة واحدة، و`403` بإظهار رسالة "غير مصرّح".
+- [ ] `429` عند الدخول: أظهر الرسالة وعطّل زر الدخول حتى تنقضي `Retry-After` ثانية.
+- [ ] بعد تغيير كلمة المرور خزّن `token` و`refreshToken` الجديدين من الاستجابة، وإلا خرجت الجلسة.
 - [ ] `401` برسالة `User is disabled` يعني أن الحساب عُطّل: التجديد سيفشل أيضاً، فأخرج المستخدم إلى صفحة الدخول.
 - [ ] لا توجد صفحة تسجيل عامة: `/auth/register` صار للمدير (`USERS:CREATE`)، فاحذف رابط «إنشاء حساب» من صفحة الدخول.
 - [ ] إظهار الشاشات والأزرار حسب `permissions` (من الدخول أو `GET /users/me`) وفق جدول القسم 4.1، مع بقاء معالجة `403` لأن الصلاحيات قد تتغير أثناء الجلسة.
@@ -1532,7 +1627,8 @@ curl -s -X PUT http://localhost:8080/api/v1/users/5/role \
 - [ ] إرسال التواريخ بصيغة `YYYY-MM-DD` فقط.
 - [ ] في `PUT` أرسل الكائن كاملاً، لأن الحقول الغائبة تُصفَّر (في الأنواع مثلاً، غياب `parentId` يحوّل النوع إلى جذر).
 - [ ] معلومات الموقع (محافظة، منطقة، ناحية، قسم، مخفر) تُعيَّن على المستخدم، لا على التقرير.
-- [ ] `formTypeId` يشير دائماً إلى نوع فرعي (`childrenCount` يساوي `0`)؛ الأنواع الرئيسية تصنيفات فقط.
+- [ ] `formTypeId` يشير دائماً إلى نوع فرعي (`childrenCount` يساوي `0`)؛ الأنواع الرئيسية تصنيفات فقط. للبحث عنه استخدم `GET /form-types?selectable=true&search=…`.
+- [ ] في شاشة أنواع النماذج: اعرض في قائمة «النوع الرئيسي» الأنواعَ التي بلا `parentId` وحدها (`GET /form-types/roots`)، فالنوع الفرعي لا يصبح أباً.
 - [ ] `reportNumber` و`reportDate` و`type` و`formTypeId` و`result` مطلوبة في كل `POST`/`PUT`، ومعها `crimePlace` و`crimeDate` متى اختير نوع جرم، وتسميات القيم الثابتة تُجلب من `GET /reports/options`.
 - [ ] الضبط الذي نتيجته `CLOSED` (تم ختم الضبط) للقراءة فقط: أخفِ أزرار التعديل والحذف، وعالج `409` إن وصلت.
 - [ ] ملفات الـ PDF تُجلب كـ `blob` مع ترويسة `Authorization`، لا عبر رابط مباشر.

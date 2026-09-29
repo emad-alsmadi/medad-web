@@ -1,12 +1,28 @@
 # QA Remediation Plan — Functional Test Report (نظام إدارة الضبوط)
 
 > **Source:** `docs/تقرير_الاختبار_الوظيفي_نظام_الضبوط.docx` (functional test run of 2026-09-29, `localhost:5173` / API `localhost:8080`).
-> **Branch:** `develop` · **Analysis date:** 2026-09-29 · **Status:** Phases 0–5 done (2026-09-29); Phases 6–8 blocked on the backend.
+> **Branch:** `develop` · **Analysis date:** 2026-09-29 · **Status:** Phases 0–8 done (2026-09-29). Backend items not delivered are dropped by the owner's decision.
 > **Governing rules:** `CLAUDE.md ` (the filename ends with a space), `ARCHITECTURE.md`, `api/API_INTEGRATION.md` (the live API contract; `api/api-docs.json` is stale and still uses `report-types`).
 
 ---
 
 ## Status (2026-09-29): Phases 0–5 done, 6–8 blocked on the backend
+
+### Update (2026-09-29, afternoon): Phases 6–8 done
+
+The backend commit `15c785c` ("add rate limit on login and change password and some filter…") is on `origin/main` of `medad-api`, but the local backend copy is still at `55bc034` and the server on 8080 runs that older build. The frontend was therefore built from the commit's source and its new `API_INTEGRATION.md` (copied into `api/`). It was verified end to end against that commit, built from `git archive` and run on port 8081 with its own `medad_qa` database (demo data), plus a second Vite on port 3000. Both were stopped afterwards, `medad_qa` was dropped, and `medad_db` was not touched.
+
+| Phase | Commit | Closed | Backend contract used |
+|---|---|---|---|
+| 6 | `54dc47e` | QA-001, 008, 009 | `?search=` on `GET /reports` and `/reports/export`: every word in the number, party names/national IDs, crime place or summary (not `reportNumber` as the plan proposed) |
+| 7 | `4c6e158` | QA-006, 007, 019 | 429 after 5 failures per account / 20 per IP in 15 min; `PUT /users/me/password` → new tokens, other sessions get 401 |
+| 8 | `92a5f6d` | QA-004 | two-level form types: a parent must be a main type (400 otherwise); a type with reports can't take sub-types (409) |
+
+**Deviations:** the Retry-After header isn't in the CORS exposed headers, so the wait is read from the 429 message ("…try again in N minute(s)"); the backend should add `Retry-After` to `setExposedHeaders`. There is no admin password reset endpoint, so there is no reset action in the users table. The login button stays off for the wait, as the guide asks. The client-side name search now also folds ة/ه, matching the backend. The form type's 409 is now told apart (duplicate name vs has reports) by its message.
+
+**Dropped (owner's decision: not delivered by the backend):** BE-2 numeric sort (QA-012), BE-3 server validation (server side of 002/013/014/034), BE-4 trimming (015, 018), BE-6 logout (005), BE-9 (020), BE-10 (023), BE-11 (026), BE-12 (027), and the admin password reset. The periodic backend check was stopped.
+
+**Action needed:** update the backend on 8080 to `15c785c` and restart it. Until then, on 5173 the search box sends `search=` but the old server ignores it, and the password card gets 403.
 
 **Phase 0 results (live backend, `curl`):**
 
