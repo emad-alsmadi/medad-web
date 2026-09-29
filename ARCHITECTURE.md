@@ -60,7 +60,8 @@ page in `lazy-pages.ts`, and add its route in `route-config.tsx`.
    — `content`, `totalElements`, `totalPages`, `number` (0-based),
    `size`, `first`, `last`. Users (`GET /users`) and report types
    (`GET /report-types`) are plain arrays, not paginated — don't force
-   `Page<T>` onto them.
+   `Page<T>` onto them; page them with `useClientPagination`, which keeps
+   the page in `?page=` (0-based, like the reports list).
 6. **Auth/session/cookies only through `lib/auth`, `lib/session`,
    `lib/cookies`** — never read `document.cookie` or persist tokens
    elsewhere. The signed-in user (role + permissions) comes from

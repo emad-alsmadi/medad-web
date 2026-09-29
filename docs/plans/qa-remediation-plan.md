@@ -1,8 +1,47 @@
 # QA Remediation Plan — Functional Test Report (نظام إدارة الضبوط)
 
 > **Source:** `docs/تقرير_الاختبار_الوظيفي_نظام_الضبوط.docx` (functional test run of 2026-09-29, `localhost:5173` / API `localhost:8080`).
-> **Branch:** `develop` · **Analysis date:** 2026-09-29 · **Status:** Ready for implementation. No code was changed while writing this plan.
+> **Branch:** `develop` · **Analysis date:** 2026-09-29 · **Status:** Phases 0–5 done (2026-09-29); Phases 6–8 blocked on the backend.
 > **Governing rules:** `CLAUDE.md ` (the filename ends with a space), `ARCHITECTURE.md`, `api/API_INTEGRATION.md` (the live API contract; `api/api-docs.json` is stale and still uses `report-types`).
+
+---
+
+## Status (2026-09-29): Phases 0–5 done, 6–8 blocked on the backend
+
+**Phase 0 results (live backend, `curl`):**
+
+| Item | Live? | Evidence |
+|---|---|---|
+| BE-1 report-number search | ❌ | `GET /reports?reportNumber=2025/6` ignores the parameter (208 results) |
+| BE-2 natural sort | ❌ | `sort=reportNumber,asc` → `2025/1, 2025/10, 2025/11…` |
+| BE-5 `reportsCount` on form types | ❌ | `FormTypeResponse` = `id, name, witnessNumber, parentId, childrenCount` |
+| BE-6 `/auth/logout`, BE-8 `/users/me/password` | ❌ | both answer 403 (no such endpoint) |
+| `details.byResult` includes `null` | ✅ | «بدون جرم» row: `{ key: null, label: "غير محدد", count: 4 }` |
+
+**Decisions log (defaults applied, no answers received):** D2 block future report dates · D3 national ID optional, exactly 11 digits · D4 at most 20 witnesses · D9 «الإعدادات» removed · D10 bell hidden · D11 Qomra kept (with the spacing fix, retest passed) · D12 a deep link is dropped when a different user signs in. D1, D5–D8 and D13 wait for Phases 6–8.
+
+**Commits (in order):** `ae12ed0` RBAC work committed first (it was uncommitted) · `4ad5310` docs · `c89d255` Phase 1 · `4772c8b` Phase 2 · `a4ae7aa` Phase 3 · `6822169` Phase 4 · `0ee0cc6` Phase 5.
+
+**Closed (25, all FE-only findings):** QA-003, 010, 011, 016, 017 · 002 (FE), 013 (FE), 014 (FE), 025, 034 (FE) · 021, 022, 024, 032, 033, 038, 039, 041, 042 · 029, 030, 031, 036, 037, 040 · 028, 035. QA-002/013/014/034 still need BE-3 so the API rejects the same values.
+
+**Verification:** `typecheck`, `lint` (0 warnings) and `build` pass on every commit. Every closed finding was re-run in headless Chrome (Playwright) against the live backend, as admin plus a temporary limited role (`REPORTS:VIEW/UPDATE`, `FORM_TYPES:VIEW`, `CRIME_TYPES:VIEW`). The regression list in §6 passed: XSS text (also through the new formatted text view), sealed report, filter deep links, legacy redirects, 404, and no horizontal scroll at 390/820px. All `QA-FIX` test data was deleted.
+
+**Deviations from the plan:**
+
+- **QA-022 root cause** is the font's narrow space glyph (2.5px at 14px), not `letter-spacing`: no Arabic text had negative letter-spacing applied. Fixed with `--word-spacing: 0.15em` on `body`. Form controls need `word-spacing: inherit`, because the browser resets it for them. «مفعّل» reads correctly at 2×, so no badge change was needed.
+- **QA-025** was fixed inside `DateInput` for every date field, not only the statistics range. A fully typed date that is invalid or out of range now shows its reason, and **clears the value** (as a native date input does), so a form can't be saved with the old value while a rejection is visible. `max={today}` on the report date depends on this.
+- **QA-031:** the IntersectionObserver was replaced with a scroll calculation (an activation line 80px below the top of the real scroll container, the last section at the bottom). A nav click also holds its choice for 1s while the smooth scroll runs.
+- **QA-038:** in collapsed mode the CSS hides the group panels. Clicking a group icon on the rail therefore widens the sidebar with that group open; otherwise its links would be unreachable. Icon-only links got `aria-label` and a `title`.
+- **QA-041** exposed a bug: `emitToast` dropped any toast raised before `ToastProvider` registered its sink (child effects run first on a full page load). Early toasts are now queued. Identical toasts already on screen are no longer stacked, which also absorbs StrictMode's double effects.
+- **QA-036:** a refused delete (4xx, whose reason is already a toast) closes the dialog; a network or 5xx failure keeps it open for retry (`isFinalError` in `lib/api/errors.ts`). Report, role and crime-type deletes already closed on error and are unchanged.
+- **QA-028:** `SearchableSelect` is used for the crime-type **filter** only. The report form's crime-type field keeps its Radix select: it protects a saved crime type whose option hasn't loaded yet, and swapping it could show «بدون جرم» for a report that has a crime.
+- **QA-035:** `useClientPagination` itself now keeps the page in the URL (all three of its callers are pages). Page clicks push history; corrections replace.
+
+**Still open:**
+
+- **Blocked on the backend:** QA-001, 008, 009 (BE-1) · 004 (BE-5) · 005 (BE-6) · 006 (BE-7) · 007, 019 (BE-8) · 012 (BE-2) · 020 (BE-9) · plus backend-only 015, 018 (BE-4), 023 (BE-10), 026 (BE-11), 027 (BE-12).
+- **Not tested:** real touch devices, Firefox/Safari, and the built-in «مستخدم» / «متابعة تقارير» roles with real accounts.
+- **Data:** report `565654325` (id 6) is still dated 31/03/2027 and now fails on save until corrected (D2). The sealed test report `QA-TEST/P1` (id 221) remains.
 
 ---
 
