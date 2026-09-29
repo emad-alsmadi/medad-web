@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Plus, TriangleAlert } from 'lucide-react';
+import { Plus, Search, SearchX, TriangleAlert } from 'lucide-react';
 import { useFormTypes, useFormTypesTree } from '@/hooks/form-types/use-form-types';
 import { useClientPagination } from '@/hooks/shared/use-client-pagination';
+import { useDebouncedValue } from '@/hooks/shared/use-debounced-value';
 import { useCan } from '@/hooks/auth/use-can';
 import { FormTypeTable } from '@/components/form-types/form-type-table';
 import { FormTypeTree } from '@/components/form-types/form-type-tree';
@@ -10,9 +11,11 @@ import { FormTypeForm } from '@/components/form-types/form-type-form';
 import { EmptyState } from '@/components/shared/empty-state';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Pagination } from '@/components/ui/pagination';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils/cn';
+import { matchesSearch } from '@/lib/utils/text';
 
 type ViewMode = 'list' | 'tree';
 
@@ -72,7 +75,13 @@ export function FormTypesListPage() {
 
 function FormTypesListView() {
   const { data, isPending, isError, refetch } = useFormTypes();
-  const { page, totalPages, pageItems, setPage } = useClientPagination(data ?? []);
+  const [search, setSearch] = useState('');
+  const debouncedSearch = useDebouncedValue(search, 300);
+  const filtered = useMemo(
+    () => (data ?? []).filter((t) => matchesSearch(t.name, debouncedSearch)),
+    [data, debouncedSearch],
+  );
+  const { page, totalPages, pageItems, setPage } = useClientPagination(filtered);
 
   if (isPending) {
     return (
@@ -98,8 +107,28 @@ function FormTypesListView() {
 
   return (
     <>
-      <FormTypeTable types={pageItems} allTypes={data} />
-      <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+      <div className="relative max-w-sm">
+        <Search className="pointer-events-none absolute inset-y-0 end-3 my-auto h-4 w-4 text-muted-foreground" />
+        <Input
+          type="search"
+          aria-label="بحث بالاسم"
+          placeholder="بحث بالاسم…"
+          value={search}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(0);
+          }}
+          className="pe-9"
+        />
+      </div>
+      {filtered.length === 0 && debouncedSearch.trim() ? (
+        <EmptyState icon={SearchX} title="لا توجد نماذج مطابقة" />
+      ) : (
+        <>
+          <FormTypeTable types={pageItems} allTypes={data} />
+          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+        </>
+      )}
     </>
   );
 }

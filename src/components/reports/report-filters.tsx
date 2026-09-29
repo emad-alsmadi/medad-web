@@ -19,6 +19,7 @@ import { Input } from '@/components/ui/input';
 import { DateInput } from '@/components/ui/date-input';
 import { Button } from '@/components/ui/button';
 import { FormField } from '@/components/ui/form-field';
+import { SearchableSelect } from '@/components/ui/searchable-select';
 import { cn } from '@/lib/utils/cn';
 import { isSelectableFormType } from '@/types/form-type';
 import type { ReportListParams } from '@/types/report';
@@ -231,19 +232,17 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
         )}
       >
         {canViewCrimeTypes && (
-          <FilterSelect
-            id="filter-crime-type"
-            label="نوع الجرم"
-            allLabel="جميع الجرائم"
-            value={value.crimeTypeId !== undefined ? String(value.crimeTypeId) : undefined}
-            onChange={(next) => update({ crimeTypeId: toNumber(next) })}
-          >
-            {crimeTypes.map((c) => (
-              <DropdownSelectItem key={c.id} value={String(c.id)}>
-                {c.name}
-              </DropdownSelectItem>
-            ))}
-          </FilterSelect>
+          // ~70 crime types: typing narrows the list instead of scrolling through it.
+          <FormField label="نوع الجرم" htmlFor="filter-crime-type">
+            <SearchableSelect
+              id="filter-crime-type"
+              emptyOptionLabel="جميع الجرائم"
+              searchPlaceholder="ابحث عن نوع الجرم…"
+              value={value.crimeTypeId !== undefined ? String(value.crimeTypeId) : undefined}
+              onChange={(next) => update({ crimeTypeId: toNumber(next) })}
+              options={crimeTypes.map((c) => ({ value: String(c.id), label: c.name }))}
+            />
+          </FormField>
         )}
         {canViewUsers && (
           <FilterSelect

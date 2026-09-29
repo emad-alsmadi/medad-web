@@ -1,24 +1,49 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 
 const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * Paginates an already-fully-fetched array on the client, for endpoints
- * with no server-side page/size support (e.g. GET /report-types, GET
- * /users). Resets to page 0 whenever the source array identity changes
- * (a new fetch/filter), so a stale page number is never left pointing
- * past the end of a shorter list.
+ * with no server-side page/size support (e.g. GET /form-types, GET
+ * /users). The page lives in `?page=` (0-based, like the reports list),
+ * so a refresh or a shared link keeps it. A value that isn't a page of
+ * the list (abc, past the end) is corrected in the URL once items exist.
  */
 export function useClientPagination<T>(items: T[], pageSize: number = DEFAULT_PAGE_SIZE) {
-  const [page, setPage] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const raw = searchParams.get('page');
+  const requested = raw === null ? 0 : Number(raw);
+  const isWellFormed = Number.isInteger(requested) && requested >= 0;
 
   const totalPages = Math.max(1, Math.ceil(items.length / pageSize));
-  const safePage = Math.min(page, totalPages - 1);
+  const page = isWellFormed ? Math.min(requested, totalPages - 1) : 0;
 
   const pageItems = useMemo(
-    () => items.slice(safePage * pageSize, safePage * pageSize + pageSize),
-    [items, safePage, pageSize],
+    () => items.slice(page * pageSize, page * pageSize + pageSize),
+    [items, page, pageSize],
   );
 
-  return { page: safePage, totalPages, pageItems, setPage };
+  const writePage = (next: number, replace: boolean) =>
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        if (next > 0) params.set('page', String(next));
+        else params.delete('page');
+        return params;
+      },
+      { replace },
+    );
+
+  // An empty list may still be loading, so only a malformed value is fixed before items arrive.
+  const needsFix = raw !== null && (!isWellFormed || (items.length > 0 && page !== requested));
+  useEffect(() => {
+    if (needsFix) writePage(page, true);
+  }, [needsFix, page]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const setPage = (next: number) => {
+    if (next !== page) writePage(next, false);
+  };
+
+  return { page, totalPages, pageItems, setPage };
 }
