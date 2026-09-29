@@ -13,17 +13,23 @@ import type { ReportResult } from '@/types/report';
 import type { StatisticItem } from '@/types/report-statistics';
 
 const NUMBER_FORMAT = new Intl.NumberFormat('ar-SY-u-nu-latn');
-const RESULT_COLUMNS: ReportResult[] = ['UNDER_INVESTIGATION', 'FURTHER_INVESTIGATION', 'CLOSED'];
+// null (no result set) gets its own column, so each row's result columns add up to its total.
+const RESULT_COLUMNS: (ReportResult | null)[] = [
+  'UNDER_INVESTIGATION',
+  'FURTHER_INVESTIGATION',
+  'CLOSED',
+  null,
+];
 
 interface CrimeStatisticsTableProps {
   items: StatisticItem<number>[];
   /** Arabic label of each result column. */
-  resultLabel: (result: ReportResult) => string;
+  resultLabel: (result: ReportResult | null) => string;
   /** Link to a crime type's reports, or undefined for «بدون جرم» (not filterable). */
   hrefFor: (item: StatisticItem<number>) => string | undefined;
 }
 
-function countOf<K>(list: StatisticItem<K>[] | undefined, key: K): number {
+function countOf<K>(list: StatisticItem<K>[] | undefined, key: K | null): number {
   return list?.find((item) => item.key === key)?.count ?? 0;
 }
 
@@ -50,7 +56,7 @@ export function CrimeStatisticsTable({ items, resultLabel, hrefFor }: CrimeStati
               <TableHead className="text-center">مكتشف</TableHead>
               <TableHead className="text-center">غير مكتشف</TableHead>
               {RESULT_COLUMNS.map((result) => (
-                <TableHead key={result} className="text-center">
+                <TableHead key={String(result)} className="text-center">
                   {resultLabel(result)}
                 </TableHead>
               ))}
@@ -81,7 +87,7 @@ export function CrimeStatisticsTable({ items, resultLabel, hrefFor }: CrimeStati
                     {NUMBER_FORMAT.format(countOf(byDiscovered, false))}
                   </TableCell>
                   {RESULT_COLUMNS.map((result) => (
-                    <TableCell key={result} className="text-center tabular-nums">
+                    <TableCell key={String(result)} className="text-center tabular-nums">
                       {NUMBER_FORMAT.format(countOf(byResult, result))}
                     </TableCell>
                   ))}

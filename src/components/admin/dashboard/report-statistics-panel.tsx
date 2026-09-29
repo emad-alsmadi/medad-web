@@ -21,7 +21,7 @@ const FORM_TYPES_SHOWN = 8;
 interface ReportStatisticsPanelProps {
   stats: ReportStatisticsResponse;
   range: StatisticsRange;
-  resultLabel: (result: ReportResult) => string;
+  resultLabel: (result: ReportResult | null) => string;
 }
 
 function countOf<K>(items: StatisticItem<K>[], key: K): number {

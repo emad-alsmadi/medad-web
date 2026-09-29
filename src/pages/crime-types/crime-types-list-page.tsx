@@ -4,6 +4,7 @@ import { Plus, Search, TriangleAlert } from 'lucide-react';
 import { useCrimeTypes } from '@/hooks/crime-types/use-crime-types';
 import { useClientPagination } from '@/hooks/shared/use-client-pagination';
 import { useDebouncedValue } from '@/hooks/shared/use-debounced-value';
+import { matchesSearch } from '@/lib/utils/text';
 import { useCan } from '@/hooks/auth/use-can';
 import { CrimeTypesTable } from '@/components/crime-types/crime-types-table';
 import { CrimeTypeFormDialog } from '@/components/crime-types/crime-type-form-dialog';
@@ -26,10 +27,10 @@ export function CrimeTypesListPage() {
   const { data, isPending, isError, refetch } = useCrimeTypes();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const debouncedSearch = useDebouncedValue(search.trim(), 300);
+  const debouncedSearch = useDebouncedValue(search, 300);
 
   const filtered = useMemo(
-    () => (data ?? []).filter((c) => !debouncedSearch || c.name.includes(debouncedSearch)),
+    () => (data ?? []).filter((c) => matchesSearch(c.name, debouncedSearch)),
     [data, debouncedSearch],
   );
   const { page, totalPages, pageItems, setPage } = useClientPagination(filtered, PAGE_SIZE);

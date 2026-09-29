@@ -12,6 +12,7 @@ import {
 import { DeleteReportDialog } from '@/components/reports/delete-report-dialog';
 import { ReportResultControl } from '@/components/reports/report-result-control';
 import { PrintCopyMenuItems } from '@/components/reports/print-copy-menu-items';
+import { ReportTextView } from '@/components/reports/report-text-view';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import {
   DropdownMenu,
@@ -26,14 +27,16 @@ import { formatDate } from '@/lib/utils/date';
 import { isReportClosed } from '@/types/report';
 import type { Confiscation, Party } from '@/types/report';
 
+/** `formatted`: written in the ورقة الضبط markup (# heading, @ signatures…), so shown as the PDF lays it out. */
 const TEXT_FIELDS: {
   key: 'summary' | 'introduction' | 'body' | 'conclusion' | 'referral';
   label: string;
+  formatted?: boolean;
 }[] = [
   { key: 'summary', label: 'الخلاصة' },
-  { key: 'introduction', label: 'المقدمة' },
-  { key: 'body', label: 'المتن' },
-  { key: 'conclusion', label: 'الخاتمة' },
+  { key: 'introduction', label: 'المقدمة', formatted: true },
+  { key: 'body', label: 'المتن', formatted: true },
+  { key: 'conclusion', label: 'الخاتمة', formatted: true },
   { key: 'referral', label: 'الإحالة' },
 ];
 
@@ -189,13 +192,19 @@ export function ReportDetailDialog({ reportId, open, onOpenChange }: ReportDetai
               {TEXT_FIELDS.some(({ key }) => report[key]) && (
                 <Section title="نص ورقة الضبط">
                   <dl className="space-y-4">
-                    {TEXT_FIELDS.map(({ key, label }) =>
-                      report[key] ? (
+                    {TEXT_FIELDS.map(({ key, label, formatted }) => {
+                      const text = report[key];
+                      if (!text) return null;
+                      return (
                         <Item key={key} label={label}>
-                          <span className="whitespace-pre-wrap">{report[key]}</span>
+                          {formatted ? (
+                            <ReportTextView text={text} />
+                          ) : (
+                            <span className="whitespace-pre-wrap">{text}</span>
+                          )}
                         </Item>
-                      ) : null,
-                    )}
+                      );
+                    })}
                   </dl>
                 </Section>
               )}

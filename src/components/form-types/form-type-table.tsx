@@ -19,16 +19,19 @@ import { isSelectableFormType } from '@/types/form-type';
 import type { FormTypeResponse } from '@/types/form-type';
 
 interface FormTypeTableProps {
+  /** The rows to show (one page). */
   types: FormTypeResponse[];
+  /** Every form type, to name a parent that sits on another page. */
+  allTypes: FormTypeResponse[];
 }
 
-export function FormTypeTable({ types }: FormTypeTableProps) {
+export function FormTypeTable({ types, allTypes }: FormTypeTableProps) {
   const can = useCan();
   const [editing, setEditing] = useState<FormTypeResponse | null>(null);
   const [deleting, setDeleting] = useState<FormTypeResponse | null>(null);
   const [managingTemplate, setManagingTemplate] = useState<FormTypeResponse | null>(null);
 
-  const nameById = new Map(types.map((t) => [t.id, t.name]));
+  const nameById = new Map(allTypes.map((t) => [t.id, t.name]));
 
   return (
     <>

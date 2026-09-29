@@ -98,7 +98,7 @@ function FormTypesListView() {
 
   return (
     <>
-      <FormTypeTable types={pageItems} />
+      <FormTypeTable types={pageItems} allTypes={data} />
       <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
     </>
   );

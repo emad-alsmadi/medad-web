@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { FileSpreadsheet, Plus, SearchX, TriangleAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
@@ -40,6 +40,12 @@ function numberParam(params: URLSearchParams, name: string): number | undefined 
   return Number.isFinite(value) ? value : undefined;
 }
 
+/** A page index is a non-negative integer; anything else (abc, -1, 1.5) is treated as absent. */
+function pageParam(params: URLSearchParams): number | undefined {
+  const value = numberParam(params, 'page');
+  return value !== undefined && Number.isInteger(value) && value >= 0 ? value : undefined;
+}
+
 /** Ignores an unknown enum value in the URL rather than sending it (the backend 400s). */
 function enumParam<T extends string>(params: URLSearchParams, name: string, allowed: readonly T[]) {
   const raw = params.get(name);
@@ -48,7 +54,7 @@ function enumParam<T extends string>(params: URLSearchParams, name: string, allo
 
 function paramsFromSearch(params: URLSearchParams): ReportListParams {
   return {
-    page: numberParam(params, 'page') ?? 0,
+    page: pageParam(params) ?? 0,
     // `typeId` is the pre-rename name, kept so old bookmarked links still filter.
     formTypeId: numberParam(params, 'formTypeId') ?? numberParam(params, 'typeId'),
     type: enumParam(params, 'type', REPORT_TYPES),
@@ -78,7 +84,8 @@ function searchFromParams(value: ReportListParams): URLSearchParams {
 export function ReportsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = paramsFromSearch(searchParams);
-  const { data, isPending, isError, isFetching, refetch } = useReports(filters);
+  const { data, isPending, isError, isFetching, isPlaceholderData, refetch } =
+    useReports(filters);
   const exportMutation = useExportReports();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { canCreate, formNeedsFormTypes } = useReportPermissions();
@@ -95,6 +102,29 @@ export function ReportsListPage() {
   }, [data, debouncedSearch]);
 
   const updateFilters = (value: ReportListParams) => setSearchParams(searchFromParams(value));
+
+  // A stale or hand-edited ?page= (abc, past the last page) is corrected in the URL
+  // instead of showing «لا توجد ضبوط» for a list that has reports.
+  const rawPage = searchParams.get('page');
+  const lastPage = data && !isPlaceholderData ? Math.max(data.totalPages - 1, 0) : undefined;
+  const pageFix =
+    rawPage !== null && pageParam(searchParams) === undefined
+      ? 0
+      : lastPage !== undefined && (filters.page ?? 0) > lastPage
+        ? lastPage
+        : undefined;
+  useEffect(() => {
+    if (pageFix === undefined) return;
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current);
+        if (pageFix > 0) next.set('page', String(pageFix));
+        else next.delete('page');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [pageFix, setSearchParams]);
 
   const exportCurrent = () => {
     // Same filters as the list, without paging/sorting (the register is always by date, ascending).
