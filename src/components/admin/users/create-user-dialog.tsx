@@ -11,16 +11,20 @@ import { useCreateUser } from '@/hooks/users/use-create-user';
 import { useRoles } from '@/hooks/roles/use-roles';
 import { useCan } from '@/hooks/auth/use-can';
 import { ApiError } from '@/lib/api/client';
+import { PASSWORD_HINT, newPasswordSchema, passwordNotEmail } from '@/lib/auth/password-policy';
 import type { ApiErrorBody } from '@/types/api';
 
-const baseSchema = z.object({
+const userFields = z.object({
   fullName: z.string().min(1, 'هذا الحقل مطلوب'),
   email: z.string().min(1, 'البريد الإلكتروني مطلوب').email('أدخل بريدًا إلكترونيًا صالحًا'),
-  password: z.string().min(8, 'يجب ألا تقل كلمة المرور عن 8 أحرف'),
+  password: newPasswordSchema,
   roleId: z.string(),
 });
 
-const withRoleSchema = baseSchema.extend({ roleId: z.string().min(1, 'اختر الدور') });
+const baseSchema = userFields.superRefine(passwordNotEmail);
+const withRoleSchema = userFields
+  .extend({ roleId: z.string().min(1, 'اختر الدور') })
+  .superRefine(passwordNotEmail);
 
 type CreateUserFormValues = z.infer<typeof baseSchema>;
 
@@ -117,6 +121,7 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
             label="كلمة المرور"
             htmlFor="password"
             error={errors.password?.message}
+            hint={PASSWORD_HINT}
             required
           >
             <PasswordInput

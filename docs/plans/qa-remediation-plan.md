@@ -18,9 +18,11 @@
 | BE-6 `/auth/logout`, BE-8 `/users/me/password` | ❌ | both answer 403 (no such endpoint) |
 | `details.byResult` includes `null` | ✅ | «بدون جرم» row: `{ key: null, label: "غير محدد", count: 4 }` |
 
-**Decisions log (defaults applied, no answers received):** D2 block future report dates · D3 national ID optional, exactly 11 digits · D4 at most 20 witnesses · D9 «الإعدادات» removed · D10 bell hidden · D11 Qomra kept (with the spacing fix, retest passed) · D12 a deep link is dropped when a different user signs in. D1, D5–D8 and D13 wait for Phases 6–8.
+**Decisions log (defaults applied, no answers received):** D5 new passwords ≥ 10 chars with a letter and a digit, not the email (UI only so far) · D2 block future report dates · D3 national ID optional, exactly 11 digits · D4 at most 20 witnesses · D9 «الإعدادات» removed · D10 bell hidden · D11 Qomra kept (with the spacing fix, retest passed) · D12 a deep link is dropped when a different user signs in. D1, D5–D8 and D13 wait for Phases 6–8.
 
 **Commits (in order):** `ae12ed0` RBAC work committed first (it was uncommitted) · `4ad5310` docs · `c89d255` Phase 1 · `4772c8b` Phase 2 · `a4ae7aa` Phase 3 · `6822169` Phase 4 · `0ee0cc6` Phase 5.
+
+**QA-019 (UI part, done early):** `lib/auth/password-policy.ts` holds the rule (D5) and its hint, applied in the create-user dialog; login is untouched, so older passwords still work. Arabic letters and digits count. The finding stays open until BE-8 enforces the same rule on the server; the change/reset screens in Phase 7 will reuse this schema.
 
 **Closed (25, all FE-only findings):** QA-003, 010, 011, 016, 017 · 002 (FE), 013 (FE), 014 (FE), 025, 034 (FE) · 021, 022, 024, 032, 033, 038, 039, 041, 042 · 029, 030, 031, 036, 037, 040 · 028, 035. QA-002/013/014/034 still need BE-3 so the API rejects the same values.
 
