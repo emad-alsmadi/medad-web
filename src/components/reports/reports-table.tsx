@@ -37,9 +37,11 @@ const COLUMN_COUNT = 8;
 
 interface ReportsTableProps {
   reports: ReportResponse[];
+  /** Shown when there are no rows (e.g. naming the search that found nothing). */
+  emptyTitle?: string;
 }
 
-export function ReportsTable({ reports }: ReportsTableProps) {
+export function ReportsTable({ reports, emptyTitle = 'لا توجد ضبوط' }: ReportsTableProps) {
   const { canUpdate, canDelete, formNeedsFormTypes } = useReportPermissions();
   const [deleteReport, setDeleteReport] = useState<ReportResponse | null>(null);
   const [detailReportId, setDetailReportId] = useState<number | null>(null);
@@ -66,7 +68,7 @@ export function ReportsTable({ reports }: ReportsTableProps) {
           {reports.length === 0 && (
             <TableRow>
               <TableCell colSpan={COLUMN_COUNT} className="p-0">
-                <EmptyState icon={FileText} title="لا توجد ضبوط" />
+                <EmptyState icon={FileText} title={emptyTitle} />
               </TableCell>
             </TableRow>
           )}

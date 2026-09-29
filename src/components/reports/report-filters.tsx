@@ -113,13 +113,16 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-[repeat(4,minmax(0,1fr))_auto_auto] lg:items-end">
-        <FormField label="بحث برقم الضبط" htmlFor="filter-search">
+        {/* Searched on the server across all reports: the number, both parties' names and
+            national IDs, the crime place and the summary. */}
+        <FormField label="بحث في الضبوط" htmlFor="filter-search">
           <div className="relative">
             <Search className="pointer-events-none absolute inset-y-0 end-3 my-auto h-4 w-4 text-muted-foreground" />
             <Input
               id="filter-search"
               type="search"
-              placeholder="مثال: 2026/114"
+              placeholder="رقم الضبط، اسم، رقم وطني، مكان…"
+              title="رقم الضبط، اسم المدعي أو المدعى عليه، الرقم الوطني، مكان الجرم، أو الخلاصة"
               value={search}
               onChange={(e) => onSearchChange(e.target.value)}
               className="pe-9"

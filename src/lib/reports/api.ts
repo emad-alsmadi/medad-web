@@ -13,6 +13,7 @@ import type { ReportStatisticsResponse, StatisticsRange } from '@/types/report-s
 const DEFAULT_SORT = 'reportDate,desc';
 
 function appendFilters(search: URLSearchParams, params: ReportFilterParams): URLSearchParams {
+  if (params.search?.trim()) search.set('search', params.search.trim());
   if (params.formTypeId !== undefined) search.set('formTypeId', String(params.formTypeId));
   if (params.type) search.set('type', params.type);
   if (params.crimeTypeId !== undefined) search.set('crimeTypeId', String(params.crimeTypeId));

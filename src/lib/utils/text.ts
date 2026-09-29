@@ -13,13 +13,15 @@ export function normalizeDigits(value: string): string {
 
 /**
  * Folds the spelling variants people type interchangeably: diacritics and
- * tatweel dropped, أ/إ/آ/ٱ → ا, ى → ي, digits normalized, spaces collapsed.
+ * tatweel dropped, أ/إ/آ/ٱ → ا, ى → ي, ة → ه, digits normalized, spaces collapsed —
+ * the same variants the backend's own search ignores.
  */
 export function normalizeArabic(value: string): string {
   return normalizeDigits(value)
     .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
     .replace(/[أإآٱ]/g, 'ا')
     .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
     .replace(/\s+/g, ' ')
     .trim()
     .toLowerCase();

@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { FileSpreadsheet, Plus, SearchX, TriangleAlert } from 'lucide-react';
+import { FileSpreadsheet, Plus, TriangleAlert } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import { useReports } from '@/hooks/reports/use-reports';
 import { useExportReports } from '@/hooks/reports/use-report-mutations';
 import { useDebouncedValue } from '@/hooks/shared/use-debounced-value';
+import { normalizeDigits } from '@/lib/utils/text';
 import {
   REPORT_FORM_NEEDS_FORM_TYPES,
   useReportPermissions,
@@ -55,6 +56,7 @@ function enumParam<T extends string>(params: URLSearchParams, name: string, allo
 function paramsFromSearch(params: URLSearchParams): ReportListParams {
   return {
     page: pageParam(params) ?? 0,
+    search: params.get('search') ?? undefined,
     // `typeId` is the pre-rename name, kept so old bookmarked links still filter.
     formTypeId: numberParam(params, 'formTypeId') ?? numberParam(params, 'typeId'),
     type: enumParam(params, 'type', REPORT_TYPES),
@@ -70,6 +72,7 @@ function paramsFromSearch(params: URLSearchParams): ReportListParams {
 function searchFromParams(value: ReportListParams): URLSearchParams {
   const params = new URLSearchParams();
   if (value.page) params.set('page', String(value.page));
+  if (value.search) params.set('search', value.search);
   if (value.formTypeId !== undefined) params.set('formTypeId', String(value.formTypeId));
   if (value.type) params.set('type', value.type);
   if (value.crimeTypeId !== undefined) params.set('crimeTypeId', String(value.crimeTypeId));
@@ -90,15 +93,35 @@ export function ReportsListPage() {
   const { canCreate, formNeedsFormTypes } = useReportPermissions();
   const viewId = searchParams.has('view') ? Number(searchParams.get('view')) : null;
 
-  const [search, setSearch] = useState('');
-  const debouncedSearch = useDebouncedValue(search.trim().toLowerCase(), 300);
-  const filteredReports = useMemo(() => {
-    if (!data) return [];
-    if (!debouncedSearch) return data.content;
-    return data.content.filter((report) =>
-      report.reportNumber.toLowerCase().includes(debouncedSearch),
+  // The server searches every report, not just this page. What's typed stays local and
+  // reaches the URL (and the request) once typing pauses; Arabic digits are sent as 0-9.
+  const [searchDraft, setSearchDraft] = useState(filters.search ?? '');
+  const debouncedDraft = useDebouncedValue(searchDraft, 300);
+  const lastWrittenSearch = useRef(filters.search ?? '');
+
+  useEffect(() => {
+    const next = normalizeDigits(debouncedDraft).trim();
+    if (next === (filters.search ?? '')) return;
+    lastWrittenSearch.current = next;
+    setSearchParams(
+      (current) => {
+        const params = new URLSearchParams(current);
+        if (next) params.set('search', next);
+        else params.delete('search');
+        params.delete('page');
+        return params;
+      },
+      { replace: true },
     );
-  }, [data, debouncedSearch]);
+  }, [debouncedDraft]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Changed some other way (clear filters, back/forward, a shared link): show that search.
+  useEffect(() => {
+    const fromUrl = filters.search ?? '';
+    if (fromUrl === lastWrittenSearch.current) return;
+    lastWrittenSearch.current = fromUrl;
+    setSearchDraft(fromUrl);
+  }, [filters.search]);
 
   const updateFilters = (value: ReportListParams) => setSearchParams(searchFromParams(value));
 
@@ -127,8 +150,8 @@ export function ReportsListPage() {
 
   const exportCurrent = () => {
     // Same filters as the list, without paging/sorting (the register is always by date, ascending).
-    const { formTypeId, type, crimeTypeId, result, creatorId, from, to } = filters;
-    exportMutation.mutate({ formTypeId, type, crimeTypeId, result, creatorId, from, to });
+    const { search, formTypeId, type, crimeTypeId, result, creatorId, from, to } = filters;
+    exportMutation.mutate({ search, formTypeId, type, crimeTypeId, result, creatorId, from, to });
   };
 
   const closeDetail = () => {
@@ -181,8 +204,8 @@ export function ReportsListPage() {
           <ReportFilters
             value={filters}
             onChange={updateFilters}
-            search={search}
-            onSearchChange={setSearch}
+            search={searchDraft}
+            onSearchChange={setSearchDraft}
           />
 
           {isPending && (
@@ -205,22 +228,18 @@ export function ReportsListPage() {
 
           {!isError && data && (
             <>
-              <ReportsTable reports={filteredReports} />
-              {debouncedSearch && filteredReports.length === 0 && (
-                <EmptyState
-                  icon={SearchX}
-                  title="لا توجد نتائج"
-                  description="لا توجد نتائج مطابقة في هذه الصفحة."
-                />
-              )}
-              {!debouncedSearch && (
-                <Pagination
-                  page={data.number}
-                  totalPages={data.totalPages}
-                  isFetching={isFetching}
-                  onPageChange={(page) => updateFilters({ ...filters, page })}
-                />
-              )}
+              <ReportsTable
+                reports={data.content}
+                emptyTitle={
+                  filters.search ? `لا توجد ضبوط مطابقة لـ «${filters.search}»` : undefined
+                }
+              />
+              <Pagination
+                page={data.number}
+                totalPages={data.totalPages}
+                isFetching={isFetching}
+                onPageChange={(page) => updateFilters({ ...filters, page })}
+              />
             </>
           )}
         </CardContent>

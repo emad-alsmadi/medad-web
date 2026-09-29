@@ -111,6 +111,11 @@ export interface ReportResponse {
 
 /** Filters shared by GET /reports and GET /reports/export. */
 export interface ReportFilterParams {
+  /**
+   * Free text: every word must appear in the report number, either party's name or national
+   * ID, the crime place or the summary.
+   */
+  search?: string;
   /** Exact form type only — sub-types are not included. */
   formTypeId?: number;
   type?: ReportType;
