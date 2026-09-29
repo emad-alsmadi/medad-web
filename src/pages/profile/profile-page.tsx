@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
+import { ChangePasswordCard } from '@/components/profile/change-password-card';
 import { ApiError } from '@/lib/api/client';
 import { roleLabel } from '@/lib/auth/permissions';
 import type { ApiErrorBody } from '@/types/api';
@@ -35,9 +36,8 @@ const FIELDS: { name: keyof ReportInfoFormValues; label: string }[] = [
 ];
 
 /**
- * There is no endpoint to change a user's own name/email/password — the
- * backend only exposes GET /users/me and PUT /users/me/report-info, so
- * those fields are shown read-only and only report-info is editable.
+ * Name and email are read-only (no endpoint changes them); the report
+ * info and the user's own password (PUT /users/me/password) are editable.
  */
 export function ProfilePage() {
   const { data: user, isPending, isError, refetch } = useMe();
@@ -95,6 +95,7 @@ export function ProfilePage() {
         </Card>
 
         {!isError && user && <ReportInfoCard reportInfo={user.reportInfo} />}
+        {!isError && user && <ChangePasswordCard email={user.email} />}
       </div>
     </>
   );

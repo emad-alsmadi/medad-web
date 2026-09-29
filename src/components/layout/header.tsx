@@ -1,5 +1,5 @@
-import { useSyncExternalStore } from 'react';
-import { ChevronDown, LogOut, Menu, Moon, Sun, User } from 'lucide-react';
+import { useRef, useSyncExternalStore } from 'react';
+import { ChevronDown, KeyRound, LogOut, Menu, Moon, Sun, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import { useTheme } from '@/contexts/theme-context';
 import { ROUTES } from '@/constant/routes';
 import { roleLabel } from '@/lib/auth/permissions';
 import { DESKTOP_SIDEBAR_QUERY } from '@/components/layout/sidebar-nav';
+import { CHANGE_PASSWORD_ANCHOR } from '@/components/profile/change-password-card';
 import type { AuthUser } from '@/types/auth';
 
 function subscribeToDesktop(onChange: () => void) {
@@ -32,6 +33,8 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
   // One button: collapses the sidebar to its icon rail on desktop, slides the drawer on mobile.
   const isSidebarShown = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
   const { theme, setTheme } = useTheme();
+  // Set by the password item: the card it opens takes focus, so the menu mustn't hand it back.
+  const keepFocusOnPage = useRef(false);
   const navigate = useNavigate();
 
   return (
@@ -84,7 +87,15 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                   <ChevronDown className="app-top-header__user-caret" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuContent
+                align="end"
+                className="w-64"
+                onCloseAutoFocus={(e) => {
+                  if (!keepFocusOnPage.current) return;
+                  keepFocusOnPage.current = false;
+                  e.preventDefault();
+                }}
+              >
                 <div className="flex flex-col gap-0.5 px-2.5 py-2">
                   <span className="text-sm font-semibold text-foreground">{user?.fullName}</span>
                   <span className="text-xs text-muted-foreground">
@@ -95,6 +106,15 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                 <DropdownMenuItem onSelect={() => void navigate(ROUTES.profile)}>
                   <User />
                   <span>الملف الشخصي</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={() => {
+                    keepFocusOnPage.current = true;
+                    void navigate(`${ROUTES.profile}#${CHANGE_PASSWORD_ANCHOR}`);
+                  }}
+                >
+                  <KeyRound />
+                  <span>تغيير كلمة المرور</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onSelect={onLogout}>

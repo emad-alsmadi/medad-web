@@ -1,8 +1,10 @@
+import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Helmet } from 'react-helmet-async';
 import { useLogin } from '@/hooks/auth/use-login';
+import { retryAfterMinutes } from '@/lib/api/errors';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FormField } from '@/components/ui/form-field';
 import { Input } from '@/components/ui/input';
@@ -32,8 +34,22 @@ export function LoginPage() {
     formState: { errors },
   } = useForm<LoginFormValues>({ resolver: zodResolver(loginSchema) });
 
+  // After too many failed attempts the backend refuses logins for a while (429); the button
+  // stays off until then instead of inviting more refused tries.
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  useEffect(() => {
+    if (lockedUntil === null) return;
+    const timer = window.setTimeout(() => setLockedUntil(null), lockedUntil - Date.now());
+    return () => window.clearTimeout(timer);
+  }, [lockedUntil]);
+
   const onSubmit = handleSubmit((values) => {
-    login.mutate(values);
+    login.mutate(values, {
+      onError: (error) => {
+        const minutes = retryAfterMinutes(error);
+        if (minutes) setLockedUntil(Date.now() + minutes * 60_000);
+      },
+    });
   });
 
   return (
@@ -80,8 +96,16 @@ export function LoginPage() {
                 {...register('password')}
               />
             </FormField>
-            <Button type="submit" className="w-full" disabled={login.isPending}>
-              {login.isPending ? 'جاري تسجيل الدخول…' : 'تسجيل الدخول'}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={login.isPending || lockedUntil !== null}
+            >
+              {login.isPending
+                ? 'جاري تسجيل الدخول…'
+                : lockedUntil !== null
+                  ? 'الدخول موقوف مؤقتًا'
+                  : 'تسجيل الدخول'}
             </Button>
           </form>
         </CardContent>
