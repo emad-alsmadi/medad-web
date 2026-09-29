@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { ApiError } from '@/lib/api/client';
 import { isDuplicateReportNumberError } from '@/lib/reports/errors';
 import { toIsoDate } from '@/lib/utils/date';
+import { normalizeDigits } from '@/lib/utils/text';
 import type { ApiErrorBody } from '@/types/api';
 import type {
   ReportRequest,
@@ -18,7 +19,12 @@ import type {
 const partySchema = z.object({
   name: z.string().max(200, 'يجب ألا يتجاوز 200 حرف'),
   motherName: z.string().max(100, 'يجب ألا يتجاوز 100 حرف'),
-  nationalId: z.string().max(50, 'يجب ألا يتجاوز 50 حرفًا'),
+  nationalId: z
+    .string()
+    .refine(
+      (value) => /^(\d{11})?$/.test(normalizeDigits(value).trim()),
+      'الرقم الوطني يتكون من 11 رقمًا',
+    ),
   origin: z.string().max(100, 'يجب ألا يتجاوز 100 حرف'),
   residence: z.string().max(255, 'يجب ألا يتجاوز 255 حرفًا'),
 });
@@ -56,8 +62,23 @@ export const reportSchema = z
     conclusion: z.string(),
     summary: z.string(),
   })
-  // Same rule as the backend: a crime type needs the crime's place and date.
   .superRefine((values, ctx) => {
+    // ISO dates compare correctly as strings.
+    if (values.reportDate > todayIsoDate()) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['reportDate'],
+        message: 'لا يمكن أن يكون تاريخ الضبط في المستقبل',
+      });
+    }
+    if (values.crimeDate && values.reportDate && values.crimeDate > values.reportDate) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['crimeDate'],
+        message: 'يجب ألا يكون تاريخ الجرم بعد تاريخ الضبط',
+      });
+    }
+    // Same rule as the backend: a crime type needs the crime's place and date.
     if (!values.crimeTypeId) return;
     if (values.crimePlace.trim() === '') {
       ctx.addIssue({
@@ -143,6 +164,10 @@ function textOrNull(value: string): string | null {
   return value.trim() === '' ? null : value;
 }
 
+function normalizeParty(party: PartyFormValues): PartyFormValues {
+  return { ...party, nationalId: normalizeDigits(party.nationalId).trim() };
+}
+
 /** A party/confiscation with every field empty is sent as null (none). */
 function objectOrNull<T extends object>(values: T): { [K in keyof T]: string | null } | null {
   const mapped = mapFields(values, (value) => textOrNull(value as string));
@@ -193,8 +218,8 @@ export function reportFormValuesToBody(values: ReportFormValues): ReportRequest 
     searchBroadcast: (values.searchBroadcast || null) as SearchBroadcast | null,
     prosecutionPermission: values.prosecutionPermission,
     discovered: values.discovered,
-    plaintiff: objectOrNull(values.plaintiff),
-    defendant: objectOrNull(values.defendant),
+    plaintiff: objectOrNull(normalizeParty(values.plaintiff)),
+    defendant: objectOrNull(normalizeParty(values.defendant)),
     crimePlace: textOrNull(values.crimePlace),
     crimeDate: values.crimeDate || null,
     actionTaken: textOrNull(values.actionTaken),
@@ -207,7 +232,7 @@ export function reportFormValuesToBody(values: ReportFormValues): ReportRequest 
   };
 }
 
-function todayIsoDate(): string {
+export function todayIsoDate(): string {
   const now = new Date();
   return toIsoDate({ year: now.getFullYear(), month: now.getMonth() + 1, day: now.getDate() });
 }

@@ -23,6 +23,8 @@ interface DateInputProps {
   disabled?: boolean;
   className?: string;
   'aria-invalid'?: boolean;
+  /** Shown when a typed date falls outside min/max; defaults to naming the bound. */
+  rangeErrorMessage?: string;
 }
 
 /** Keeps the digits of what was typed and lays them out as dd/mm/yyyy. */
@@ -47,6 +49,19 @@ function inRange(iso: string, min?: string, max?: string): boolean {
   return (!min || iso >= min) && (!max || iso <= max);
 }
 
+/** Why a fully typed date can't be taken, or null when it can (or isn't complete yet). */
+function typedDateError(text: string, min?: string, max?: string, rangeMessage?: string) {
+  if (text.length < 10) return null;
+  const parts = parseDisplayDate(text);
+  if (!parts) return 'تاريخ غير صالح';
+  const iso = toIsoDate(parts);
+  if (inRange(iso, min, max)) return null;
+  if (rangeMessage) return rangeMessage;
+  return max && iso > max
+    ? `يجب ألا يتجاوز التاريخ ${formatDate(max)}`
+    : `يجب ألا يسبق التاريخ ${formatDate(min)}`;
+}
+
 /**
  * A date field that always reads day first (dd/mm/yyyy), whatever the browser's language — unlike
  * a native date input. Type the date, or pick it from the calendar; the value stays ISO.
@@ -61,12 +76,21 @@ export function DateInput({
   disabled,
   className,
   'aria-invalid': ariaInvalid,
+  rangeErrorMessage,
 }: DateInputProps) {
   const [text, setText] = useState(() => formatDate(value));
   const [open, setOpen] = useState(false);
+  const typedError = typedDateError(text, min, max, rangeErrorMessage);
+  const errorId = id ? `${id}-typed-error` : undefined;
+  // Set when a rejected date clears the value, so that echo doesn't wipe the text showing why.
+  const keepTextOnSync = useRef(false);
 
   // Follow a value set from outside (a reset, a quick range) without touching one being typed.
   useEffect(() => {
+    if (keepTextOnSync.current) {
+      keepTextOnSync.current = false;
+      return;
+    }
     const typed = parseDisplayDate(text);
     if ((typed ? toIsoDate(typed) : '') !== (value ?? '')) setText(formatDate(value));
   }, [value]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -79,7 +103,13 @@ export function DateInput({
       return;
     }
     const parts = parseDisplayDate(next);
-    if (parts && inRange(toIsoDate(parts), min, max)) onChange(toIsoDate(parts));
+    if (parts && inRange(toIsoDate(parts), min, max)) {
+      onChange(toIsoDate(parts));
+    } else if (typedDateError(next, min, max) && value) {
+      // Like a native date input: a rejected date leaves the field empty, not on its old value.
+      keepTextOnSync.current = true;
+      onChange('');
+    }
   };
 
   const pick = (iso: string) => {
@@ -100,11 +130,13 @@ export function DateInput({
             placeholder="يوم/شهر/سنة"
             value={text}
             disabled={disabled}
-            aria-invalid={ariaInvalid}
+            aria-invalid={ariaInvalid || Boolean(typedError)}
             onChange={handleChange}
-            // Drop a half-typed date rather than leave it showing beside the old value.
+            aria-describedby={typedError ? errorId : undefined}
+            // Drop a half-typed date rather than leave it showing beside the old value; a
+            // rejected full date stays, with its reason, so it isn't silently undone.
             onBlur={() => {
-              setText(formatDate(value));
+              if (!typedError) setText(formatDate(value));
               onBlur?.();
             }}
             className={cn(
@@ -122,6 +154,11 @@ export function DateInput({
           </PopoverPrimitive.Trigger>
         </div>
       </PopoverPrimitive.Anchor>
+      {typedError && (
+        <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-destructive">
+          {typedError}
+        </p>
+      )}
       <PopoverPrimitive.Portal>
         <PopoverPrimitive.Content
           align="start"

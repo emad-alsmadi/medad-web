@@ -27,7 +27,11 @@ import { DictationRichText } from '@/components/shared/dictation-rich-text';
 import { FormTypeCascadeSelect } from '@/components/reports/form-type-cascade-select';
 import { ReportFormNav, ReportFormSection } from '@/components/reports/report-form-sections';
 import type { ReportSectionMeta } from '@/components/reports/report-form-sections';
-import { REPORT_SECTION_FIELDS, countFilled } from '@/components/reports/report-form-schema';
+import {
+  REPORT_SECTION_FIELDS,
+  countFilled,
+  todayIsoDate,
+} from '@/components/reports/report-form-schema';
 import type { ReportFormValues, ReportSectionKey } from '@/components/reports/report-form-schema';
 
 /** Stand-in for "no value" in a DropdownSelect, since Radix reserves ''. */
@@ -412,6 +416,8 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
   const canViewCrimeTypes = useCan()('CRIME_TYPES', 'VIEW');
   const { data: crimeTypes = [] } = useCrimeTypes({ enabled: canViewCrimeTypes });
   const hasCrimeType = useWatch({ control, name: 'crimeTypeId' }) !== '';
+  const reportDate = useWatch({ control, name: 'reportDate' });
+  const today = todayIsoDate();
   const [open, setOpen] = useState(INITIALLY_OPEN);
 
   const crimeTypeOptions = crimeTypes.map((c) => ({ value: String(c.id), label: c.name }));
@@ -512,6 +518,8 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                     <DateInput
                       id="reportDate"
                       value={field.value}
+                      max={today}
+                      rangeErrorMessage="لا يمكن أن يكون تاريخ الضبط في المستقبل"
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       aria-invalid={Boolean(errors.reportDate)}
@@ -586,6 +594,8 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                     <DateInput
                       id="crimeDate"
                       value={field.value}
+                      max={reportDate || today}
+                      rangeErrorMessage="يجب ألا يكون تاريخ الجرم بعد تاريخ الضبط"
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       aria-invalid={Boolean(errors.crimeDate)}

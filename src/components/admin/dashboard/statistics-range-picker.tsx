@@ -66,7 +66,8 @@ export function StatisticsRangePicker({ value, onChange }: StatisticsRangePicker
           );
         })}
       </div>
-      <div className="flex items-end gap-2">
+      {/* items-start: a date's error line mustn't push its neighbour down. */}
+      <div className="flex items-start gap-2">
         <div className="space-y-1">
           <Label htmlFor="stats-from" className="text-xs">
             من
@@ -76,6 +77,7 @@ export function StatisticsRangePicker({ value, onChange }: StatisticsRangePicker
             className="h-9"
             value={value.from ?? ''}
             max={value.to}
+            rangeErrorMessage="يجب ألا يتجاوز تاريخ «من» تاريخ «إلى»"
             onChange={(next) => onChange({ ...value, from: next || undefined })}
           />
         </div>
@@ -88,6 +90,7 @@ export function StatisticsRangePicker({ value, onChange }: StatisticsRangePicker
             className="h-9"
             value={value.to ?? ''}
             min={value.from}
+            rangeErrorMessage="يجب ألا يسبق تاريخ «إلى» تاريخ «من»"
             onChange={(next) => onChange({ ...value, to: next || undefined })}
           />
         </div>

@@ -21,9 +21,16 @@ import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
 import type { FormTypeResponse } from '@/types/form-type';
 
+/** No official form needs more; guards against typos like 99999. */
+const MAX_WITNESSES = 20;
+
 const formTypeSchema = z.object({
   name: z.string().min(1, 'الاسم مطلوب').max(100, 'يجب ألا يتجاوز 100 حرف'),
-  witnessNumber: z.coerce.number().int('يجب أن يكون رقمًا صحيحًا').min(0, 'يجب أن يكون 0 أو أكبر'),
+  witnessNumber: z.coerce
+    .number()
+    .int('يجب أن يكون رقمًا صحيحًا')
+    .min(0, 'يجب أن يكون 0 أو أكبر')
+    .max(MAX_WITNESSES, `يجب ألا يتجاوز ${MAX_WITNESSES}`),
   parentId: z.string(),
 });
 
@@ -116,6 +123,7 @@ export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps
               id="witnessNumber"
               type="number"
               min={0}
+              max={MAX_WITNESSES}
               aria-invalid={Boolean(errors.witnessNumber)}
               {...register('witnessNumber')}
             />
