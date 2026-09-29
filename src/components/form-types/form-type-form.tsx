@@ -45,22 +45,6 @@ interface FormTypeFormProps {
   onOpenChange: (open: boolean) => void;
 }
 
-/** All ids that are `type` itself or one of its descendants, per the flat list's parentId links. */
-function collectDescendantIds(types: FormTypeResponse[], rootId: number): Set<number> {
-  const ids = new Set<number>([rootId]);
-  let added = true;
-  while (added) {
-    added = false;
-    for (const t of types) {
-      if (t.parentId !== undefined && ids.has(t.parentId) && !ids.has(t.id)) {
-        ids.add(t.id);
-        added = true;
-      }
-    }
-  }
-  return ids;
-}
-
 export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps) {
   const { data: types = [] } = useFormTypes();
   const createMutation = useCreateFormType();
@@ -82,8 +66,14 @@ export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps
     },
   });
 
-  const excludedIds = formType ? collectDescendantIds(types, formType.id) : new Set<number>();
-  const parentOptions = types.filter((t) => !excludedIds.has(t.id));
+  // Two levels, as the backend enforces: a parent is a main type (one without a parent), and a
+  // type with sub-types stays a main type. Types with reports are refused as parents on save (409).
+  const hasSubTypes = (formType?.childrenCount ?? 0) > 0;
+  const mainTypes = types.filter((t) => t.parentId === undefined && t.id !== formType?.id);
+  // The current parent stays listed even if older data breaks the rule: keeping it always passes.
+  const currentParent = types.find((t) => t.id === formType?.parentId);
+  const parentOptions =
+    currentParent && !mainTypes.includes(currentParent) ? [currentParent, ...mainTypes] : mainTypes;
 
   const onSubmit = handleSubmit((values) => {
     const body = {
@@ -128,7 +118,16 @@ export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps
               {...register('witnessNumber')}
             />
           </FormField>
-          <FormField label="التصنيف الأب" htmlFor="parentId" error={errors.parentId?.message}>
+          <FormField
+            label="التصنيف الأب"
+            htmlFor="parentId"
+            error={errors.parentId?.message}
+            hint={
+              hasSubTypes
+                ? 'لهذا النموذج نماذج فرعية، فيبقى نموذجًا رئيسيًا.'
+                : 'النماذج الرئيسية فقط. لا يُختار نموذج مسجلة عليه ضبوط.'
+            }
+          >
             <Controller
               control={control}
               name="parentId"
@@ -137,7 +136,11 @@ export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps
                   value={field.value === '' ? ROOT_PARENT : field.value}
                   onValueChange={(next) => field.onChange(next === ROOT_PARENT ? '' : next)}
                 >
-                  <DropdownSelectTrigger id="parentId" aria-invalid={Boolean(errors.parentId)}>
+                  <DropdownSelectTrigger
+                    id="parentId"
+                    aria-invalid={Boolean(errors.parentId)}
+                    disabled={hasSubTypes}
+                  >
                     <DropdownSelectValue />
                   </DropdownSelectTrigger>
                   <DropdownSelectContent>
