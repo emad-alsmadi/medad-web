@@ -1,10 +1,10 @@
-import { Bell, ChevronDown, LogOut, Menu, Moon, Settings, Sun, User } from 'lucide-react';
+import { useSyncExternalStore } from 'react';
+import { ChevronDown, LogOut, Menu, Moon, Sun, User } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
@@ -12,10 +12,25 @@ import { useUiStore } from '@/store/ui-store';
 import { useTheme } from '@/contexts/theme-context';
 import { ROUTES } from '@/constant/routes';
 import { roleLabel } from '@/lib/auth/permissions';
+import { DESKTOP_SIDEBAR_QUERY } from '@/components/layout/sidebar-nav';
 import type { AuthUser } from '@/types/auth';
 
+function subscribeToDesktop(onChange: () => void) {
+  const query = window.matchMedia(DESKTOP_SIDEBAR_QUERY);
+  query.addEventListener('change', onChange);
+  return () => query.removeEventListener('change', onChange);
+}
+
+const isDesktopNow = () => window.matchMedia(DESKTOP_SIDEBAR_QUERY).matches;
+
 export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: () => void }) {
+  const isSidebarOpen = useUiStore((state) => state.isSidebarOpen);
   const toggleSidebar = useUiStore((state) => state.toggleSidebar);
+  const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
+  const toggleSidebarCollapsed = useUiStore((state) => state.toggleSidebarCollapsed);
+  const isDesktop = useSyncExternalStore(subscribeToDesktop, isDesktopNow);
+  // One button: collapses the sidebar to its icon rail on desktop, slides the drawer on mobile.
+  const isSidebarShown = isDesktop ? !isSidebarCollapsed : isSidebarOpen;
   const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
@@ -28,8 +43,9 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
             <button
               type="button"
               className="app-top-header__menu-btn"
-              aria-label="فتح القائمة الجانبية"
-              onClick={toggleSidebar}
+              aria-label={isSidebarShown ? 'طي القائمة الجانبية' : 'إظهار القائمة الجانبية'}
+              aria-expanded={isSidebarShown}
+              onClick={isDesktop ? toggleSidebarCollapsed : toggleSidebar}
             >
               <Menu />
             </button>
@@ -43,31 +59,6 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
 
           <div className="app-top-header__end">
             <div className="app-top-header__tool-cluster">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="app-top-header__tool-btn"
-                    aria-label="الإشعارات"
-                  >
-                    <Bell />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="end"
-                  sideOffset={12}
-                  className="app-top-header__notifications-menu w-72"
-                >
-                  <DropdownMenuLabel>الإشعارات</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <div className="px-2.5 py-6 text-center text-sm text-muted-foreground">
-                    لا توجد إشعارات حالياً
-                  </div>
-                </DropdownMenuContent>
-              </DropdownMenu>
-
-              <span className="app-top-header__tool-divider" aria-hidden="true" />
-
               <button
                 type="button"
                 className="app-top-header__tool-btn theme-toggle-btn"
@@ -104,10 +95,6 @@ export function Header({ user, onLogout }: { user: AuthUser | null; onLogout: ()
                 <DropdownMenuItem onSelect={() => void navigate(ROUTES.profile)}>
                   <User />
                   <span>الملف الشخصي</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings />
-                  <span>الإعدادات</span>
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem variant="destructive" onSelect={onLogout}>

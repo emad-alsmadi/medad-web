@@ -36,16 +36,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       const id = uid();
       const durationMs = opts?.durationMs ?? 4000;
 
-      setItems((prev) => [
-        ...prev,
-        {
-          id,
-          message,
-          title: opts?.title,
-          variant,
-          durationMs,
-        },
-      ]);
+      setItems((prev) =>
+        // The same message already on screen isn't stacked again (a double click, a re-run effect).
+        prev.some((t) => t.message === message && t.variant === variant)
+          ? prev
+          : [
+              ...prev,
+              { id, message, title: opts?.title, variant, durationMs },
+            ],
+      );
 
       timersRef.current[id] = window.setTimeout(() => remove(id), durationMs);
     },
@@ -62,8 +61,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
+      {/* Bottom, on the end side: clear of the sidebar (start side in RTL) and the page title. */}
       <div
-        className="pointer-events-none fixed start-4 top-4 z-[10090] flex w-[min(100vw-2rem,22rem)] flex-col gap-3"
+        className="pointer-events-none fixed bottom-4 end-4 z-[10090] flex w-[min(100vw-2rem,22rem)] flex-col gap-3"
         dir="rtl"
         aria-live="polite"
         aria-relevant="additions"
@@ -73,9 +73,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <motion.div
               key={t.id}
               layout
-              initial={{ opacity: 0, y: -10, scale: 0.98 }}
+              initial={{ opacity: 0, y: 10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -6, scale: 0.98 }}
+              exit={{ opacity: 0, y: 6, scale: 0.98 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className={cn(
                 'pointer-events-auto overflow-hidden rounded-[14px] border bg-white/95 font-sans shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-md',

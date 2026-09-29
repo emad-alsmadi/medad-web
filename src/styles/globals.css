@@ -134,6 +134,8 @@
   --color-text-secondary: #3d524e;
   --color-text-muted: #6b7c78;
   --font-family: 'Qomra Arabic', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, system-ui, sans-serif;
+  /* Qomra's space is only 0.175em, so «الأدوار والصلاحيات» read as one word; this brings it to ~0.325em. */
+  --word-spacing: 0.15em;
   --syid-gradient: linear-gradient(
     135deg,
     var(--syid-forest-deep) 0%,
@@ -1515,11 +1517,6 @@ body,
   z-index: 1060;
 }
 
-.app-top-header__notifications-menu {
-  z-index: 1080 !important;
-  margin-top: var(--space-2);
-}
-
 .app-top-header__shell {
   position: relative;
   overflow: visible;
@@ -1709,13 +1706,6 @@ body,
   border: 1px solid color-mix(in srgb, var(--syid-gold) 24%, var(--color-border-subtle));
   background: color-mix(in srgb, var(--color-bg) 70%, var(--color-surface));
   box-shadow: var(--shadow-xs);
-}
-
-.app-top-header__tool-divider {
-  width: 1px;
-  height: 1.35rem;
-  margin-inline: 0.1rem;
-  background: color-mix(in srgb, var(--syid-gold) 35%, var(--color-border-subtle));
 }
 
 .app-top-header__user {
@@ -4293,10 +4283,19 @@ html {
 
 body {
   font-family: var(--font-family);
+  word-spacing: var(--word-spacing);
   font-size: var(--font-size-sm);
   line-height: 1.6;
   color: var(--color-text);
   background-color: var(--color-bg) !important;
+}
+
+/* The browser resets word-spacing on form controls; they must match the text around them. */
+button,
+input,
+select,
+textarea {
+  word-spacing: inherit;
 }
 
 .main-content {

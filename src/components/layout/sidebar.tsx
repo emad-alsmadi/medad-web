@@ -66,7 +66,12 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
       </nav>
 
       <div className="app-sidebar__footer">
-        <button type="button" className="app-sidebar__logout-btn" onClick={onLogout}>
+        <button
+          type="button"
+          className="app-sidebar__logout-btn"
+          aria-label="تسجيل الخروج"
+          onClick={onLogout}
+        >
           <LogOut />
           <span className="app-sidebar__link-label">تسجيل الخروج</span>
         </button>

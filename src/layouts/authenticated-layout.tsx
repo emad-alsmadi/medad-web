@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Outlet, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils/cn';
 import { useUiStore } from '@/store/ui-store';
 import { useAuthContext } from '@/contexts/auth-context';
@@ -12,9 +12,16 @@ import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 export function AuthenticatedLayout() {
   const isSidebarCollapsed = useUiStore((state) => state.isSidebarCollapsed);
   const isSidebarOpen = useUiStore((state) => state.isSidebarOpen);
+  const setSidebarOpen = useUiStore((state) => state.setSidebarOpen);
+  const { pathname } = useLocation();
   const { user } = useAuthContext();
   const logout = useLogout();
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
+
+  // The mobile drawer covers the page, so it closes once a link has taken the user somewhere.
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname, setSidebarOpen]);
 
   const handleConfirmLogout = () => {
     setIsLogoutConfirmOpen(false);

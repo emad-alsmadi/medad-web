@@ -3,7 +3,7 @@ import type { Location } from 'react-router-dom';
 import { useAuthContext } from '@/contexts/auth-context';
 import { RouteFallback } from '@/components/common/route-fallback';
 import { ROUTES } from '@/constant/routes';
-import { readAccessToken } from '@/lib/session/session';
+import { readAccessToken, readLastSignedOutUserId } from '@/lib/session/session';
 
 interface LocationState {
   from?: Location;
@@ -28,7 +28,7 @@ interface LocationState {
  * the inner one dead code.
  */
 export function GuestOnlyRoute() {
-  const { isAuthenticated, isLoading } = useAuthContext();
+  const { user, isAuthenticated, isLoading } = useAuthContext();
   const location = useLocation();
 
   if (isLoading) {
@@ -45,7 +45,10 @@ export function GuestOnlyRoute() {
   const hasToken = Boolean(readAccessToken());
 
   if (isAuthenticated && hasToken) {
-    const from = (location.state as LocationState | null)?.from;
+    const lastUserId = readLastSignedOutUserId();
+    // A link saved after someone else signed out here was theirs, not this user's.
+    const isOtherUsersLink = lastUserId !== null && lastUserId !== user?.id;
+    const from = isOtherUsersLink ? undefined : (location.state as LocationState | null)?.from;
     // Guard against redirecting back into /login itself: if `from` ever
     // points at a guest-only route (e.g. a stale history state carried
     // over from an earlier redirect), honoring it would send an

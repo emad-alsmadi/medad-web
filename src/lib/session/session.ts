@@ -14,6 +14,8 @@ import { getCookie, removeCookie, setCookie } from '@/lib/cookies/cookies';
 const TOKEN_COOKIE = 'medad_session_token';
 const REFRESH_TOKEN_COOKIE = 'medad_refresh_token';
 const USER_COOKIE = 'medad_session_user';
+/** Who last signed out on this browser (an id, not sensitive): see readLastSignedOutUserId. */
+const LAST_USER_COOKIE = 'medad_last_user_id';
 
 const TOKEN_DAYS = 1;
 const REFRESH_DAYS = 30;
@@ -82,7 +84,18 @@ export function readSessionUser(): AuthUser | null {
 }
 
 export function clearSession(): void {
+  const user = readSessionUser();
+  if (user) setCookie(LAST_USER_COOKIE, String(user.id), { days: REFRESH_DAYS, ...COOKIE_OPTIONS });
   removeCookie(TOKEN_COOKIE);
   removeCookie(REFRESH_TOKEN_COOKIE);
   removeCookie(USER_COOKIE);
+}
+
+/**
+ * The user whose session ended last here, so a deep link saved while
+ * signed out isn't handed to a different person who signs in next.
+ */
+export function readLastSignedOutUserId(): number | null {
+  const value = Number(getCookie(LAST_USER_COOKIE));
+  return Number.isInteger(value) && value > 0 ? value : null;
 }

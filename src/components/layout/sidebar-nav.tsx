@@ -11,6 +11,9 @@ import {
 import { ROUTES } from '@/constant/routes';
 import type { Action, Resource } from '@/types/role';
 
+
+/** Where the sidebar stops being a mobile drawer (globals.css switches at 991.98px). */
+export const DESKTOP_SIDEBAR_QUERY = '(min-width: 992px)';
 export interface SidebarLink {
   to: string;
   label: string;
@@ -49,7 +52,7 @@ export const reportsGroup: SidebarGroup = {
       to: ROUTES.reports.list,
       label: 'كل الضبوط',
       icon: <FileText />,
-      end: true,
+      // Not `end`: a report's edit page (/reports/:id/edit) belongs here too.
       permission: { resource: 'REPORTS', action: 'VIEW' },
     },
     {
