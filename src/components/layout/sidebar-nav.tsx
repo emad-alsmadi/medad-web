@@ -11,7 +11,6 @@ import {
 import { ROUTES } from '@/constant/routes';
 import type { Action, Resource } from '@/types/role';
 
-
 /** Where the sidebar stops being a mobile drawer (globals.css switches at 991.98px). */
 export const DESKTOP_SIDEBAR_QUERY = '(min-width: 992px)';
 export interface SidebarLink {

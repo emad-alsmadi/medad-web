@@ -200,12 +200,13 @@ function SwitchField({ control, name, label, onText, offText }: SwitchFieldProps
       name={name}
       render={({ field }) => (
         <div className="flex h-[42px] items-center justify-between gap-3 rounded-xl border border-input bg-card px-3.5">
-          <span id={labelId} className="text-sm font-medium">
+          {/* A real label, so clicking the text toggles the switch too. */}
+          <label id={labelId} htmlFor={name} className="flex-1 cursor-pointer text-sm font-medium">
             {label}
             <span className="ms-2 text-xs font-normal text-muted-foreground">
               {field.value ? onText : offText}
             </span>
-          </span>
+          </label>
           <Switch
             id={name}
             aria-labelledby={labelId}

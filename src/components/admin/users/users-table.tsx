@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { ConfirmDialog } from '@/components/ui/confirm-dialog';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -47,6 +48,7 @@ export function UsersTable({ users }: UsersTableProps) {
   const [reportInfoUser, setReportInfoUser] = useState<UserResponse | null>(null);
   const [roleUser, setRoleUser] = useState<UserResponse | null>(null);
   const [deleteUser, setDeleteUser] = useState<UserResponse | null>(null);
+  const [disablingUser, setDisablingUser] = useState<UserResponse | null>(null);
 
   return (
     <>
@@ -89,8 +91,11 @@ export function UsersTable({ users }: UsersTableProps) {
                         checked={user.enabled}
                         aria-labelledby={statusId}
                         disabled={enabledMutation.isPending}
+                        // Disabling cuts the user off at once, so it's confirmed; enabling isn't.
                         onCheckedChange={(enabled) =>
-                          enabledMutation.mutate({ id: user.id, enabled })
+                          enabled
+                            ? enabledMutation.mutate({ id: user.id, enabled })
+                            : setDisablingUser(user)
                         }
                       />
                     )}
@@ -172,6 +177,22 @@ export function UsersTable({ users }: UsersTableProps) {
           onOpenChange={(open) => !open && setRoleUser(null)}
         />
       )}
+      <ConfirmDialog
+        open={disablingUser !== null}
+        onOpenChange={(open) => !open && setDisablingUser(null)}
+        title="تعطيل الحساب"
+        message="سيتوقف وصول هذا المستخدم فورًا وتنتهي جلساته، حتى يُعاد تفعيل حسابه."
+        itemLabel={disablingUser?.fullName}
+        confirmLabel="تعطيل"
+        isConfirming={enabledMutation.isPending}
+        onConfirm={() =>
+          disablingUser &&
+          enabledMutation.mutate(
+            { id: disablingUser.id, enabled: false },
+            { onSettled: () => setDisablingUser(null) },
+          )
+        }
+      />
       {deleteUser && (
         <DeleteUserDialog
           user={deleteUser}

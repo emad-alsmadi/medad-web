@@ -1,9 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { useReport } from '@/hooks/reports/use-report';
 import { useUpdateReport } from '@/hooks/reports/use-report-mutations';
 import { ReportFormActions, ReportFormFields } from '@/components/reports/report-form';
+import { DiscardChangesDialog } from '@/components/reports/discard-changes-dialog';
 import {
   applyReportFormApiError,
   reportFormValuesToBody,
@@ -28,10 +29,20 @@ export function ReportFormPage() {
 
   const form = useReportForm(report ? reportToFormValues(report) : undefined);
   const { handleSubmit, setError } = form;
+  const isDirty = form.formState.isDirty;
+  const [isDiscardOpen, setIsDiscardOpen] = useState(false);
 
   useEffect(() => {
     if (isClosed) notify.info('تم ختم هذا الضبط، فلم يعد قابلًا للتعديل.');
   }, [isClosed]);
+
+  // A reload or closed tab would lose the edits silently; the browser asks first.
+  useEffect(() => {
+    if (!isDirty) return;
+    const warn = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [isDirty]);
 
   if (!id || Number.isNaN(reportId)) {
     return <Navigate to={ROUTES.reports.list} replace />;
@@ -53,6 +64,8 @@ export function ReportFormPage() {
       </Card>
     );
   }
+
+  const leave = () => void navigate(`${ROUTES.reports.list}?view=${reportId}`);
 
   const onSubmit = handleSubmit((values) => {
     mutation.mutate(reportFormValuesToBody(values), {
@@ -84,12 +97,17 @@ export function ReportFormPage() {
                 isPending={mutation.isPending}
                 isEdit
                 error={form.formState.errors.root?.message}
-                onCancel={() => void navigate(`${ROUTES.reports.list}?view=${reportId}`)}
+                onCancel={() => (isDirty ? setIsDiscardOpen(true) : leave())}
               />
             </div>
           </form>
         </CardContent>
       </Card>
+      <DiscardChangesDialog
+        open={isDiscardOpen}
+        onOpenChange={setIsDiscardOpen}
+        onDiscard={leave}
+      />
     </>
   );
 }

@@ -84,8 +84,7 @@ function searchFromParams(value: ReportListParams): URLSearchParams {
 export function ReportsListPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const filters = paramsFromSearch(searchParams);
-  const { data, isPending, isError, isFetching, isPlaceholderData, refetch } =
-    useReports(filters);
+  const { data, isPending, isError, isFetching, isPlaceholderData, refetch } = useReports(filters);
   const exportMutation = useExportReports();
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { canCreate, formNeedsFormTypes } = useReportPermissions();

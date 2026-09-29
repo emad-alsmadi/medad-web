@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { ReportFormActions, ReportFormFields } from '@/components/reports/report-form';
+import { DiscardChangesDialog } from '@/components/reports/discard-changes-dialog';
 import {
   applyReportFormApiError,
   reportFormValuesToBody,
@@ -31,10 +33,15 @@ export function CreateReportDialog({ open, onOpenChange }: CreateReportDialogPro
     formState: { isDirty, errors },
   } = form;
 
+  const [isDiscardOpen, setIsDiscardOpen] = useState(false);
+
   const close = () => {
     reset();
     onOpenChange(false);
   };
+
+  // Cancel and ✕ ask first once something is typed, so a long entry isn't lost to a misclick.
+  const requestClose = () => (isDirty ? setIsDiscardOpen(true) : close());
 
   const onSubmit = handleSubmit((values) => {
     mutation.mutate(reportFormValuesToBody(values), {
@@ -47,34 +54,48 @@ export function CreateReportDialog({ open, onOpenChange }: CreateReportDialogPro
   });
 
   return (
-    <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : close())}>
-      <DialogContent
-        className="flex h-[min(92vh,56rem)] max-h-none w-[calc(100vw-2rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0"
-        onInteractOutside={(e) => isDirty && e.preventDefault()}
-        onEscapeKeyDown={(e) => isDirty && e.preventDefault()}
-      >
-        <header className="border-b border-border-subtle px-6 py-4 pe-12">
-          <DialogTitle>إنشاء ضبط</DialogTitle>
-          <DialogDescription className="mt-1.5">
-            الحقول المعلَّمة بـ <span className="text-destructive">*</span> مطلوبة، وبقية
-            الأقسام اختيارية يمكن فتحها عند الحاجة.
-          </DialogDescription>
-        </header>
+    <>
+      <Dialog open={open} onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}>
+        <DialogContent
+          className="flex h-[min(92vh,56rem)] max-h-none w-[calc(100vw-2rem)] max-w-6xl flex-col gap-0 overflow-hidden rounded-2xl p-0"
+          onInteractOutside={(e) => isDirty && e.preventDefault()}
+          onEscapeKeyDown={(e) => isDirty && e.preventDefault()}
+        >
+          <header className="border-b border-border-subtle px-6 py-4 pe-12">
+            <DialogTitle>إنشاء ضبط</DialogTitle>
+            <DialogDescription className="mt-1.5">
+              الحقول المعلَّمة بـ <span className="text-destructive">*</span> مطلوبة، وبقية الأقسام
+              اختيارية يمكن فتحها عند الحاجة.
+            </DialogDescription>
+          </header>
 
-        <form onSubmit={(e) => void onSubmit(e)} noValidate className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto bg-background/60 px-6 py-5">
-            <ReportFormFields form={form} isEdit={false} />
-          </div>
-          <footer className="border-t border-border-subtle bg-card px-6 py-3">
-            <ReportFormActions
-              isPending={mutation.isPending}
-              isEdit={false}
-              error={errors.root?.message}
-              onCancel={close}
-            />
-          </footer>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <form
+            onSubmit={(e) => void onSubmit(e)}
+            noValidate
+            className="flex min-h-0 flex-1 flex-col"
+          >
+            <div className="min-h-0 flex-1 overflow-y-auto bg-background/60 px-6 py-5">
+              <ReportFormFields form={form} isEdit={false} />
+            </div>
+            <footer className="border-t border-border-subtle bg-card px-6 py-3">
+              <ReportFormActions
+                isPending={mutation.isPending}
+                isEdit={false}
+                error={errors.root?.message}
+                onCancel={requestClose}
+              />
+            </footer>
+          </form>
+        </DialogContent>
+      </Dialog>
+      <DiscardChangesDialog
+        open={isDiscardOpen}
+        onOpenChange={setIsDiscardOpen}
+        onDiscard={() => {
+          setIsDiscardOpen(false);
+          close();
+        }}
+      />
+    </>
   );
 }

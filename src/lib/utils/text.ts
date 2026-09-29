@@ -3,9 +3,10 @@ const EXTENDED_ARABIC_INDIC_ZERO = 0x06f0;
 
 /** Arabic-Indic (٠-٩) and Persian (۰-۹) digits → 0-9, so a number typed on an Arabic keyboard matches. */
 export function normalizeDigits(value: string): string {
-  return value.replace(/[٠-٩۰-۹]/g, (digit) => {
+  return value.replace(/[\u0660-\u0669\u06F0-\u06F9]/g, (digit) => {
     const code = digit.charCodeAt(0);
-    const zero = code >= EXTENDED_ARABIC_INDIC_ZERO ? EXTENDED_ARABIC_INDIC_ZERO : ARABIC_INDIC_ZERO;
+    const zero =
+      code >= EXTENDED_ARABIC_INDIC_ZERO ? EXTENDED_ARABIC_INDIC_ZERO : ARABIC_INDIC_ZERO;
     return String(code - zero);
   });
 }
@@ -16,7 +17,7 @@ export function normalizeDigits(value: string): string {
  */
 export function normalizeArabic(value: string): string {
   return normalizeDigits(value)
-    .replace(/[ً-ٰٟـ]/g, '')
+    .replace(/[\u064B-\u065F\u0670\u0640]/g, '')
     .replace(/[أإآٱ]/g, 'ا')
     .replace(/ى/g, 'ي')
     .replace(/\s+/g, ' ')

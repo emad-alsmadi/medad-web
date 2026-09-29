@@ -86,7 +86,7 @@ export function CrimeTypesTable({ crimeTypes, offset }: CrimeTypesTableProps) {
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title="حذف نوع الجرم"
-        message="لا يمكن حذف نوع مستخدم في ضبوط قائمة، ولا يمكن التراجع عن الحذف."
+        message="هل تريد حذف نوع الجرم هذا؟ لا يمكن التراجع عن هذا الإجراء."
         itemLabel={deleting?.name}
         confirmLabel="حذف"
         isConfirming={deleteMutation.isPending}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { useWatch } from 'react-hook-form';
 import type { Control } from 'react-hook-form';
@@ -20,6 +20,20 @@ export interface ReportSectionMeta {
 const NUMBER_FORMAT = new Intl.NumberFormat('ar-SY-u-nu-latn');
 
 const sectionDomId = (key: ReportSectionKey) => `report-section-${key}`;
+
+/** px below the top of the scroll area where a section counts as the one being read. */
+const ACTIVATION_LINE = 80;
+
+/** The nearest scrolling ancestor, or null when the page itself scrolls. */
+function scrollParent(element: HTMLElement): HTMLElement | null {
+  for (let node = element.parentElement; node; node = node.parentElement) {
+    const { overflowY } = getComputedStyle(node);
+    if ((overflowY === 'auto' || overflowY === 'scroll') && node.scrollHeight > node.clientHeight) {
+      return node;
+    }
+  }
+  return null;
+}
 
 interface SectionStatusProps {
   control: Control<ReportFormValues>;
@@ -160,23 +174,60 @@ interface ReportFormNavProps {
 export function ReportFormNav({ control, sections, errorSections, onJump }: ReportFormNavProps) {
   const [active, setActive] = useState<ReportSectionKey>(sections[0]!.key);
 
+  // Until then, scrolling doesn't override a section picked in this index: its smooth
+  // scroll may stop short of the top when little content follows it.
+  const pickedUntil = useRef(0);
+
+  // The active section is the one crossing a line just below the top of the scroll area
+  // (the create dialog's body or the page) — or the last one at the very bottom, since a
+  // short final section can never scroll up to that line.
   useEffect(() => {
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries.filter((e) => e.isIntersecting);
-        if (visible.length === 0) return;
-        const top = visible.reduce((a, b) =>
-          a.boundingClientRect.top < b.boundingClientRect.top ? a : b,
-        );
-        setActive(top.target.id.replace('report-section-', '') as ReportSectionKey);
-      },
-      { rootMargin: '0px 0px -60% 0px' },
-    );
-    sections.forEach((s) => {
-      const el = document.getElementById(sectionDomId(s.key));
-      if (el) observer.observe(el);
+    const placed = sections.flatMap((section) => {
+      const element = document.getElementById(sectionDomId(section.key));
+      return element ? [{ key: section.key, element }] : [];
     });
-    return () => observer.disconnect();
+    if (placed.length === 0) return;
+
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      if (Date.now() < pickedUntil.current) return;
+      // Looked up each time: the dialog body only starts scrolling once sections are opened.
+      const scroller = scrollParent(placed[0]!.element);
+      const box = scroller
+        ? {
+            top: scroller.getBoundingClientRect().top,
+            height: scroller.clientHeight,
+            scrolled: scroller.scrollTop,
+            total: scroller.scrollHeight,
+          }
+        : {
+            top: 0,
+            height: window.innerHeight,
+            scrolled: window.scrollY,
+            total: document.documentElement.scrollHeight,
+          };
+      const canScroll = box.total > box.height + 2;
+      const atBottom = canScroll && box.scrolled + box.height >= box.total - 2;
+      let current = placed[0]!.key;
+      for (const { key, element } of placed) {
+        if (element.getBoundingClientRect().top - box.top <= ACTIVATION_LINE) current = key;
+      }
+      setActive(atBottom ? placed[placed.length - 1]!.key : current);
+    };
+    const schedule = () => {
+      if (!frame) frame = window.requestAnimationFrame(update);
+    };
+
+    update();
+    // Capture: scroll doesn't bubble, and this hears the page and the dialog body alike.
+    document.addEventListener('scroll', schedule, { capture: true, passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      document.removeEventListener('scroll', schedule, { capture: true });
+      window.removeEventListener('resize', schedule);
+      window.cancelAnimationFrame(frame);
+    };
   }, [sections]);
 
   return (
@@ -191,6 +242,7 @@ export function ReportFormNav({ control, sections, errorSections, onJump }: Repo
                 type="button"
                 aria-current={isActive ? 'step' : undefined}
                 onClick={() => {
+                  pickedUntil.current = Date.now() + 1000;
                   setActive(section.key);
                   onJump(section.key);
                 }}

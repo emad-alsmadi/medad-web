@@ -40,7 +40,7 @@ export function ReportInfoDialog({ user, open, onOpenChange }: ReportInfoDialogP
     register,
     handleSubmit,
     setError,
-    formState: { errors },
+    formState: { errors, isDirty },
   } = useForm<ReportInfoFormValues>({
     resolver: zodResolver(reportInfoSchema),
     values: user.reportInfo ?? {
@@ -68,7 +68,11 @@ export function ReportInfoDialog({ user, open, onOpenChange }: ReportInfoDialogP
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
+      <DialogContent
+        // Typed data isn't lost to a stray click or Escape; ✕ still closes it.
+        onInteractOutside={(e) => isDirty && e.preventDefault()}
+        onEscapeKeyDown={(e) => isDirty && e.preventDefault()}
+      >
         <DialogTitle>بيانات الضبط — {user.fullName}</DialogTitle>
         <DialogDescription>جميع الحقول مطلوبة.</DialogDescription>
         <form onSubmit={(e) => void onSubmit(e)} noValidate className="space-y-4">

@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Button } from '@/components/ui/button';
 import { useDeleteFormType } from '@/hooks/form-types/use-form-type-mutations';
 import type { FormTypeResponse } from '@/types/form-type';
+import { isFinalError } from '@/lib/api/errors';
 
 interface DeleteFormTypeDialogProps {
   formType: FormTypeResponse;
@@ -34,6 +35,8 @@ export function DeleteFormTypeDialog({
             onClick={() =>
               mutation.mutate(formType.id, {
                 onSuccess: () => onOpenChange(false),
+                // The toast explains a refusal (e.g. still in use); only a failure worth retrying keeps this open.
+                onError: (error) => isFinalError(error) && onOpenChange(false),
               })
             }
           >

@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
 import { Button } from '@/components/ui/button';
 import { useDeleteUser } from '@/hooks/users/use-delete-user';
 import type { UserResponse } from '@/types/user';
+import { isFinalError } from '@/lib/api/errors';
 
 interface DeleteUserDialogProps {
   user: UserResponse;
@@ -30,6 +31,8 @@ export function DeleteUserDialog({ user, open, onOpenChange }: DeleteUserDialogP
             onClick={() =>
               mutation.mutate(user.id, {
                 onSuccess: () => onOpenChange(false),
+                // The toast explains a refusal (e.g. still in use); only a failure worth retrying keeps this open.
+                onError: (error) => isFinalError(error) && onOpenChange(false),
               })
             }
           >
