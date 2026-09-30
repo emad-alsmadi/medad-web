@@ -13,10 +13,7 @@ import {
 } from '@/components/ui/dropdown-select';
 import { Button } from '@/components/ui/button';
 import { useFormTypes } from '@/hooks/form-types/use-form-types';
-import {
-  useCreateFormType,
-  useUpdateFormType,
-} from '@/hooks/form-types/use-form-type-mutations';
+import { useCreateFormType, useUpdateFormType } from '@/hooks/form-types/use-form-type-mutations';
 import { ApiError } from '@/lib/api/client';
 import type { ApiErrorBody } from '@/types/api';
 import type { FormTypeResponse } from '@/types/form-type';
@@ -69,6 +66,8 @@ export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps
   // Two levels, as the backend enforces: a parent is a main type (one without a parent), and a
   // type with sub-types stays a main type. Types with reports are refused as parents on save (409).
   const hasSubTypes = (formType?.childrenCount ?? 0) > 0;
+  // Editing a main type: nothing to choose, so the field is hidden (and parentId stays null).
+  const isMainType = formType !== undefined && formType.parentId === undefined;
   const mainTypes = types.filter((t) => t.parentId === undefined && t.id !== formType?.id);
   // The current parent stays listed even if older data breaks the rule: keeping it always passes.
   const currentParent = types.find((t) => t.id === formType?.parentId);
@@ -118,43 +117,45 @@ export function FormTypeForm({ formType, open, onOpenChange }: FormTypeFormProps
               {...register('witnessNumber')}
             />
           </FormField>
-          <FormField
-            label="التصنيف الأب"
-            htmlFor="parentId"
-            error={errors.parentId?.message}
-            hint={
-              hasSubTypes
-                ? 'لهذا النموذج نماذج فرعية، فيبقى نموذجًا رئيسيًا.'
-                : 'النماذج الرئيسية فقط. لا يُختار نموذج مسجلة عليه ضبوط.'
-            }
-          >
-            <Controller
-              control={control}
-              name="parentId"
-              render={({ field }) => (
-                <DropdownSelect
-                  value={field.value === '' ? ROOT_PARENT : field.value}
-                  onValueChange={(next) => field.onChange(next === ROOT_PARENT ? '' : next)}
-                >
-                  <DropdownSelectTrigger
-                    id="parentId"
-                    aria-invalid={Boolean(errors.parentId)}
-                    disabled={hasSubTypes}
+          {!isMainType && (
+            <FormField
+              label="تصنيف رئيسي"
+              htmlFor="parentId"
+              error={errors.parentId?.message}
+              hint={
+                hasSubTypes
+                  ? 'لهذا النموذج نماذج فرعية، فيبقى نموذجًا رئيسيًا.'
+                  : 'النماذج الرئيسية فقط. لا يُختار نموذج مسجلة عليه ضبوط.'
+              }
+            >
+              <Controller
+                control={control}
+                name="parentId"
+                render={({ field }) => (
+                  <DropdownSelect
+                    value={field.value === '' ? ROOT_PARENT : field.value}
+                    onValueChange={(next) => field.onChange(next === ROOT_PARENT ? '' : next)}
                   >
-                    <DropdownSelectValue />
-                  </DropdownSelectTrigger>
-                  <DropdownSelectContent>
-                    <DropdownSelectItem value={ROOT_PARENT}>بلا (جذر)</DropdownSelectItem>
-                    {parentOptions.map((t) => (
-                      <DropdownSelectItem key={t.id} value={String(t.id)}>
-                        {t.name}
-                      </DropdownSelectItem>
-                    ))}
-                  </DropdownSelectContent>
-                </DropdownSelect>
-              )}
-            />
-          </FormField>
+                    <DropdownSelectTrigger
+                      id="parentId"
+                      aria-invalid={Boolean(errors.parentId)}
+                      disabled={hasSubTypes}
+                    >
+                      <DropdownSelectValue />
+                    </DropdownSelectTrigger>
+                    <DropdownSelectContent>
+                      <DropdownSelectItem value={ROOT_PARENT}>بلا (جذر)</DropdownSelectItem>
+                      {parentOptions.map((t) => (
+                        <DropdownSelectItem key={t.id} value={String(t.id)}>
+                          {t.name}
+                        </DropdownSelectItem>
+                      ))}
+                    </DropdownSelectContent>
+                  </DropdownSelect>
+                )}
+              />
+            </FormField>
+          )}
           <Button type="submit" className="w-full" disabled={mutation.isPending}>
             {mutation.isPending ? 'جاري الحفظ…' : 'حفظ'}
           </Button>

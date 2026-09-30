@@ -70,10 +70,10 @@ export function CrimeTypeChart({ items, hrefFor }: CrimeTypeChartProps) {
                 stroke="var(--color-border-subtle)"
                 vertical={false}
               />
-              <XAxis dataKey="label" tick={{ fontSize: 12 }} tickLine={false} interval={0} />
+              <XAxis dataKey="label" tick={{ fontSize: '0.75rem' }} tickLine={false} interval={0} />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: '0.75rem' }}
                 width={32}
                 axisLine={false}
                 tickLine={false}
@@ -84,7 +84,7 @@ export function CrimeTypeChart({ items, hrefFor }: CrimeTypeChartProps) {
                   direction: 'rtl',
                   borderRadius: 8,
                   border: '1px solid var(--color-border-subtle)',
-                  fontSize: 13,
+                  fontSize: '0.8125rem',
                 }}
                 formatter={(value) => [NUMBER_FORMAT.format(Number(value)), 'عدد الضبوط']}
                 labelFormatter={(_, payload) =>

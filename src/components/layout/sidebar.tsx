@@ -8,6 +8,7 @@ import {
   adminGroup,
   dashboardLink,
   profileLink,
+  settingsLink,
   reportsGroup,
   type SidebarGroup,
   type SidebarLink,
@@ -63,6 +64,7 @@ export function Sidebar({ onLogout }: { onLogout: () => void }) {
         {reports.links.length > 0 && <SidebarGroupItem group={reports} />}
         <SidebarLinkItem link={profileLink} />
         {admin.links.length > 0 && <SidebarGroupItem group={admin} />}
+        <SidebarLinkItem link={settingsLink} />
       </nav>
 
       <div className="app-sidebar__footer">

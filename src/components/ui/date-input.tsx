@@ -25,6 +25,11 @@ interface DateInputProps {
   'aria-invalid'?: boolean;
   /** Shown when a typed date falls outside min/max; defaults to naming the bound. */
   rangeErrorMessage?: string;
+  /**
+   * The form's own error for this field (e.g. «required»). Shown under the field unless what was
+   * typed explains the problem better, so only one message appears.
+   */
+  error?: string;
 }
 
 /** Keeps the digits of what was typed and lays them out as dd/mm/yyyy. */
@@ -77,10 +82,15 @@ export function DateInput({
   className,
   'aria-invalid': ariaInvalid,
   rangeErrorMessage,
+  error,
 }: DateInputProps) {
   const [text, setText] = useState(() => formatDate(value));
   const [open, setOpen] = useState(false);
   const typedError = typedDateError(text, min, max, rangeErrorMessage);
+  // A half-typed date leaves the value empty, so the form's «required» would mislead.
+  const isIncomplete = text !== '' && text.length < 10;
+  const shownError =
+    typedError ?? (error && isIncomplete ? 'أكمل التاريخ بالصيغة يوم/شهر/سنة' : error);
   const errorId = id ? `${id}-typed-error` : undefined;
   // Set when a rejected date clears the value, so that echo doesn't wipe the text showing why.
   const keepTextOnSync = useRef(false);
@@ -132,7 +142,7 @@ export function DateInput({
             disabled={disabled}
             aria-invalid={ariaInvalid || Boolean(typedError)}
             onChange={handleChange}
-            aria-describedby={typedError ? errorId : undefined}
+            aria-describedby={shownError ? errorId : undefined}
             // Drop a half-typed date rather than leave it showing beside the old value; a
             // rejected full date stays, with its reason, so it isn't silently undone.
             onBlur={() => {
@@ -140,7 +150,7 @@ export function DateInput({
               onBlur?.();
             }}
             className={cn(
-              'hover:border-syid-gold-dark/40 flex h-[42px] w-full rounded-md border border-input bg-card py-2 pl-11 pr-3.5 text-right text-sm tabular-nums text-foreground shadow-none transition-all duration-syid ease-out placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-background disabled:opacity-85 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive/15',
+              'hover:border-syid-gold-dark/40 flex h-[2.625rem] w-full rounded-md border border-input bg-card py-2 pl-11 pr-3.5 text-right text-sm tabular-nums text-foreground shadow-none transition-all duration-syid ease-out placeholder:text-muted-foreground focus-visible:border-primary focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-primary/15 disabled:cursor-not-allowed disabled:bg-background disabled:opacity-85 aria-[invalid=true]:border-destructive aria-[invalid=true]:focus-visible:ring-destructive/15',
               className,
             )}
           />
@@ -154,9 +164,9 @@ export function DateInput({
           </PopoverPrimitive.Trigger>
         </div>
       </PopoverPrimitive.Anchor>
-      {typedError && (
-        <p id={errorId} role="alert" className="mt-1.5 text-xs font-medium text-destructive">
-          {typedError}
+      {shownError && (
+        <p id={errorId} role="alert" className="mt-1.5 text-sm text-destructive">
+          {shownError}
         </p>
       )}
       <PopoverPrimitive.Portal>
@@ -248,7 +258,7 @@ function Calendar({ value, min, max, onPick, onClear }: CalendarProps) {
           <ChevronLeft className="h-4 w-4" />
         </button>
       </div>
-      <div className="grid grid-cols-7 text-center text-[11px] font-medium text-muted-foreground">
+      <div className="grid grid-cols-7 text-center text-[0.6875rem] font-medium text-muted-foreground">
         {WEEKDAYS.map((d) => (
           <span key={d} className="py-1">
             {d}

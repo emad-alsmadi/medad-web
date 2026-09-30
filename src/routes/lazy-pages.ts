@@ -12,6 +12,10 @@ export const ProfilePage = lazy(() =>
   import('@/pages/profile/profile-page').then((m) => ({ default: m.ProfilePage })),
 );
 
+export const SettingsPage = lazy(() =>
+  import('@/pages/settings/settings-page').then((m) => ({ default: m.SettingsPage })),
+);
+
 export const AdminUsersListPage = lazy(() =>
   import('@/pages/admin/users/users-list-page').then((m) => ({ default: m.UsersListPage })),
 );

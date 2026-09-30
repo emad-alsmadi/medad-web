@@ -182,11 +182,11 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
         )}
 
         {/* Side by side under the fields on small screens; the last two cells of the row on large ones. */}
-        <div className="flex gap-2 sm:col-span-2 lg:contents">
+        <div className="flex flex-wrap gap-2 sm:col-span-2 lg:contents">
           <Button
             type="button"
             variant="ghost"
-            className="h-[42px] flex-1 lg:flex-none"
+            className="h-[2.625rem] flex-1 lg:flex-none"
             onClick={() => {
               onSearchChange('');
               onChange({ page: 0 });
@@ -200,7 +200,7 @@ export function ReportFilters({ value, onChange, search, onSearchChange }: Repor
             type="button"
             variant="outline"
             className={cn(
-              'h-[42px] flex-1 lg:flex-none',
+              'h-[2.625rem] flex-1 lg:flex-none',
               showAdvanced && 'border-primary/40 bg-primary/5 text-primary',
             )}
             aria-expanded={showAdvanced}

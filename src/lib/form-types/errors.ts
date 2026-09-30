@@ -11,11 +11,11 @@ export function formTypeSaveErrorMessage(error: unknown, fallback: string): stri
   if (!(error instanceof ApiError)) return fallback;
   const message = (error.details as ApiErrorBody | undefined)?.message ?? '';
   if (error.status === 409 && message.includes('has reports filed under it')) {
-    return 'لا يمكن أن يكون هذا النموذج تصنيفًا أب، لأن ضبوطًا مسجلة عليه.';
+    return 'لا يمكن أن يكون هذا النموذج تصنيفًا رئيسيًا، لأن ضبوطًا مسجلة عليه.';
   }
   if (error.status === 409) return 'يوجد نموذج ضبط بهذا الاسم مسبقًا.';
   if (message.includes('is a sub-type')) {
-    return 'التصنيف الأب يجب أن يكون نموذجًا رئيسيًا، لا نموذجًا فرعيًا.';
+    return 'التصنيف الرئيسي المختار يجب أن يكون نموذجًا رئيسيًا، لا نموذجًا فرعيًا.';
   }
   if (message.includes('has sub-types')) {
     return 'لهذا النموذج نماذج فرعية، فلا يمكن نقله تحت تصنيف آخر.';

@@ -111,7 +111,7 @@ export function ReportFormSection({
           hasError ? 'bg-destructive/10 text-destructive' : 'bg-primary/10 text-primary',
         )}
       >
-        <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+        <Icon className="h-[1.125rem] w-[1.125rem]" aria-hidden="true" />
       </span>
       <span className="min-w-0 flex-1 text-start">
         <span id={headingId} className="block text-sm font-semibold text-foreground">

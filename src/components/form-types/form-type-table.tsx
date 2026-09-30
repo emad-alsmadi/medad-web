@@ -41,7 +41,7 @@ export function FormTypeTable({ types, allTypes }: FormTypeTableProps) {
           <TableRow>
             <TableHead>الاسم</TableHead>
             <TableHead>عدد الشهود</TableHead>
-            <TableHead>التصنيف الأب</TableHead>
+            <TableHead>تصنيف رئيسي</TableHead>
             <TableHead>الفروع</TableHead>
             <TableHead className="text-end">الإجراءات</TableHead>
           </TableRow>

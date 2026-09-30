@@ -61,9 +61,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
-      {/* Bottom, on the end side: clear of the sidebar (start side in RTL) and the page title. */}
+      {/* Top, on the end side (the far left in RTL), clear of the sidebar on the start side. */}
       <div
-        className="pointer-events-none fixed bottom-4 end-4 z-[10090] flex w-[min(100vw-2rem,22rem)] flex-col gap-3"
+        className="pointer-events-none fixed end-4 top-4 z-[10090] flex w-[min(100vw-2rem,22rem)] flex-col gap-3"
         dir="rtl"
         aria-live="polite"
         aria-relevant="additions"
@@ -73,9 +73,9 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             <motion.div
               key={t.id}
               layout
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
+              initial={{ opacity: 0, y: -10, scale: 0.98 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 6, scale: 0.98 }}
+              exit={{ opacity: 0, y: -6, scale: 0.98 }}
               transition={{ duration: 0.2, ease: 'easeOut' }}
               className={cn(
                 'pointer-events-auto overflow-hidden rounded-[14px] border bg-white/95 font-sans shadow-[0_20px_50px_rgba(15,23,42,0.12)] backdrop-blur-md',
@@ -107,8 +107,8 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 </div>
 
                 <div className="min-w-0 flex-1 text-start">
-                  {t.title ? <div className="text-[13px] font-extrabold text-[#101828]">{t.title}</div> : null}
-                  <div className={cn('text-[13px] font-semibold leading-relaxed text-[#344054]', t.title && 'mt-0.5')}>
+                  {t.title ? <div className="text-[0.8125rem] font-extrabold text-[#101828]">{t.title}</div> : null}
+                  <div className={cn('text-[0.8125rem] font-semibold leading-relaxed text-[#344054]', t.title && 'mt-0.5')}>
                     {t.message}
                   </div>
                 </div>

@@ -776,16 +776,21 @@ html.dark .maintenance-table .ui-domain-badge--maint {
   color: #fff;
 }
 
+/* Set by FontSizeProvider (profile «حجم الخط»); everything sized in rem follows. */
 html.font-size-sm {
-  font-size: 14px;
+  font-size: 15px;
 }
 
 html.font-size-md {
-  font-size: 16px;
+  font-size: 17px;
 }
 
 html.font-size-lg {
-  font-size: 18px;
+  font-size: 20px;
+}
+
+html.font-size-xl {
+  font-size: 24px;
 }
 
 .settings-card .card-body {

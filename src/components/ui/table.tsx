@@ -1,16 +1,23 @@
 import type { HTMLAttributes, TdHTMLAttributes, ThHTMLAttributes } from 'react';
 import { cn } from '@/lib/utils/cn';
 
-export function Table({ className, ...props }: HTMLAttributes<HTMLTableElement>) {
+interface TableProps extends HTMLAttributes<HTMLTableElement> {
+  /** The scrolling wrapper, e.g. a max height (and focusability) for a frozen header. */
+  containerProps?: HTMLAttributes<HTMLDivElement>;
+}
+
+export function Table({ className, containerProps, ...props }: TableProps) {
   return (
-    <div className="w-full overflow-x-auto">
+    <div {...containerProps} className={cn('w-full overflow-x-auto', containerProps?.className)}>
       <table className={cn('w-full text-start text-sm', className)} {...props} />
     </div>
   );
 }
 
 export function TableHeader({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {
-  return <thead className={cn('border-b border-border-subtle bg-background', className)} {...props} />;
+  return (
+    <thead className={cn('border-b border-border-subtle bg-background', className)} {...props} />
+  );
 }
 
 export function TableBody({ className, ...props }: HTMLAttributes<HTMLTableSectionElement>) {

@@ -1,4 +1,12 @@
-import { Area, AreaChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from 'recharts';
 import { useReducedMotion } from 'framer-motion';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -36,10 +44,10 @@ export function ReportsTrendChart({ data }: { data: MonthCount[] }) {
                 stroke="var(--color-border-subtle)"
                 vertical={false}
               />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} tickLine={false} />
+              <XAxis dataKey="month" tick={{ fontSize: '0.75rem' }} tickLine={false} />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 12 }}
+                tick={{ fontSize: '0.75rem' }}
                 width={32}
                 axisLine={false}
                 tickLine={false}
@@ -50,7 +58,7 @@ export function ReportsTrendChart({ data }: { data: MonthCount[] }) {
                   direction: 'rtl',
                   borderRadius: 8,
                   border: '1px solid var(--color-border-subtle)',
-                  fontSize: 13,
+                  fontSize: '0.8125rem',
                 }}
                 formatter={(value) => [value, 'عدد الضبوط']}
                 labelFormatter={(label) => label}

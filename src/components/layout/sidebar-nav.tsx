@@ -4,6 +4,7 @@ import {
   FolderTree,
   Gavel,
   LayoutDashboard,
+  Settings,
   ShieldCheck,
   User,
   Users,
@@ -42,6 +43,7 @@ export const profileLink: SidebarLink = {
   icon: <User />,
   end: true,
 };
+
 
 export const reportsGroup: SidebarGroup = {
   label: 'الضبوط',
@@ -89,4 +91,10 @@ export const adminGroup: SidebarGroup = {
       permission: { resource: 'ROLES', action: 'VIEW' },
     },
   ],
+};
+export const settingsLink: SidebarLink = {
+  to: ROUTES.settings,
+  label: 'الإعدادات',
+  icon: <Settings />,
+  end: true,
 };

@@ -30,9 +30,9 @@ export function FormTypesListPage() {
         <title>نماذج الضبوط</title>
       </Helmet>
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+        <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2 space-y-0">
           <CardTitle>نماذج الضبوط</CardTitle>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center rounded-md border border-border-subtle p-0.5">
               <Button
                 variant={view === 'list' ? 'secondary' : 'ghost'}

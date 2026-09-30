@@ -15,6 +15,7 @@ import {
   LoginPage,
   NotFoundPage,
   ProfilePage,
+  SettingsPage,
   ReportDetailPage,
   ReportFormPage,
   ReportsListPage,
@@ -43,7 +44,7 @@ function guarded(resource: Resource, action: Action, children: RouteObject[]): R
  *     remembering where the visitor was headed).
  *   - RequirePermission: nested under RequireAuth — each section needs
  *     the permission its page's main request needs on the backend.
- * `/` and the profile are open to every signed-in user.
+ * `/`, the profile and the settings are open to every signed-in user.
  */
 export const routeConfig: RouteObject[] = [
   {
@@ -58,6 +59,7 @@ export const routeConfig: RouteObject[] = [
         children: [
           { path: ROUTES.home, element: <HomeRedirect /> },
           { path: ROUTES.profile, element: withSuspense(<ProfilePage />) },
+          { path: ROUTES.settings, element: withSuspense(<SettingsPage />) },
           guarded('REPORTS', 'VIEW', [
             { path: ROUTES.admin.dashboard, element: withSuspense(<AdminDashboardPage />) },
             { path: ROUTES.reports.list, element: withSuspense(<ReportsListPage />) },

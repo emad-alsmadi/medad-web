@@ -5,6 +5,7 @@ import { DirectionProvider } from '@radix-ui/react-direction';
 import { QueryProvider } from '@/providers/query-provider';
 import { AuthProvider } from '@/providers/auth-provider';
 import { ThemeProvider } from '@/providers/theme-provider';
+import { FontSizeProvider } from '@/providers/font-size-provider';
 import { ToastProvider } from '@/components/ui/toast-provider';
 
 /**
@@ -17,17 +18,19 @@ export function AppProviders({ children }: { children: ReactNode }) {
     <HelmetProvider>
       <QueryProvider>
         <ThemeProvider>
-          {/* App is RTL-only (index.html sets dir="rtl") — this tells every
-              Radix Popper-based primitive (dropdown menu, select, tooltip)
-              to compute placement/alignment for RTL instead of defaulting
-              to LTR. */}
-          <DirectionProvider dir="rtl">
-            <ToastProvider>
-              <BrowserRouter>
-                <AuthProvider>{children}</AuthProvider>
-              </BrowserRouter>
-            </ToastProvider>
-          </DirectionProvider>
+          <FontSizeProvider>
+            {/* App is RTL-only (index.html sets dir="rtl") — this tells every
+                Radix Popper-based primitive (dropdown menu, select, tooltip)
+                to compute placement/alignment for RTL instead of defaulting
+                to LTR. */}
+            <DirectionProvider dir="rtl">
+              <ToastProvider>
+                <BrowserRouter>
+                  <AuthProvider>{children}</AuthProvider>
+                </BrowserRouter>
+              </ToastProvider>
+            </DirectionProvider>
+          </FontSizeProvider>
         </ThemeProvider>
       </QueryProvider>
     </HelmetProvider>

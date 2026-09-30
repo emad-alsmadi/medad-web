@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { cn } from '@/lib/utils/cn';
 import type { ReportResult } from '@/types/report';
 import type { StatisticItem } from '@/types/report-statistics';
 
@@ -29,6 +30,12 @@ interface CrimeStatisticsTableProps {
   hrefFor: (item: StatisticItem<number>) => string | undefined;
 }
 
+// Frozen header row and crime-type column: sticky cells need an opaque background to cover
+// what scrolls beneath them.
+const FROZEN_HEAD =
+  'sticky top-0 z-10 bg-background shadow-[inset_0_-1px_0_var(--color-border-subtle)]';
+const FROZEN_COLUMN = 'sticky start-0';
+
 function countOf<K>(list: StatisticItem<K>[] | undefined, key: K | null): number {
   return list?.find((item) => item.key === key)?.count ?? 0;
 }
@@ -45,18 +52,25 @@ export function CrimeStatisticsTable({ items, resultLabel, hrefFor }: CrimeStati
         <CardTitle>الضبوط حسب نوع الجرم</CardTitle>
       </CardHeader>
       <CardContent>
-        <Table>
+        <Table
+          containerProps={{
+            className: 'max-h-[32rem] overflow-auto rounded-lg',
+            tabIndex: 0,
+            role: 'region',
+            'aria-label': 'جدول الضبوط حسب نوع الجرم',
+          }}
+        >
           <TableCaption className="sr-only">
             عدد الضبوط لكل نوع جرم مع الاكتشاف والنتيجة
           </TableCaption>
           <TableHeader>
             <TableRow>
-              <TableHead>نوع الجرم</TableHead>
-              <TableHead className="text-center">المجموع</TableHead>
-              <TableHead className="text-center">مكتشف</TableHead>
-              <TableHead className="text-center">غير مكتشف</TableHead>
+              <TableHead className={cn(FROZEN_HEAD, FROZEN_COLUMN, 'z-20')}>نوع الجرم</TableHead>
+              <TableHead className={cn(FROZEN_HEAD, 'text-center')}>المجموع</TableHead>
+              <TableHead className={cn(FROZEN_HEAD, 'text-center')}>مكتشف</TableHead>
+              <TableHead className={cn(FROZEN_HEAD, 'text-center')}>غير مكتشف</TableHead>
               {RESULT_COLUMNS.map((result) => (
-                <TableHead key={String(result)} className="text-center">
+                <TableHead key={String(result)} className={cn(FROZEN_HEAD, 'text-center')}>
                   {resultLabel(result)}
                 </TableHead>
               ))}
@@ -68,7 +82,7 @@ export function CrimeStatisticsTable({ items, resultLabel, hrefFor }: CrimeStati
               const { byDiscovered, byResult } = item.details ?? {};
               return (
                 <TableRow key={String(item.key)}>
-                  <TableCell className="font-medium">
+                  <TableCell className={cn(FROZEN_COLUMN, 'z-[5] bg-card font-medium')}>
                     {href ? (
                       <Link to={href} className="hover:underline">
                         {item.label}

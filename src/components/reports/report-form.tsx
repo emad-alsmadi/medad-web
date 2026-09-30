@@ -94,7 +94,7 @@ const TEXT_FIELDS: {
     name: 'conclusion',
     label: 'الخاتمة',
     hint: 'عدد النسخ وجهاتها ووقت التحرير والختم',
-    placeholder: 'الضبط على نسختين...',
+    placeholder: 'مثال: الضبط على نسختين...',
   },
   {
     name: 'referral',
@@ -199,7 +199,7 @@ function SwitchField({ control, name, label, onText, offText }: SwitchFieldProps
       control={control}
       name={name}
       render={({ field }) => (
-        <div className="flex h-[42px] items-center justify-between gap-3 rounded-xl border border-input bg-card px-3.5">
+        <div className="flex h-[2.625rem] items-center justify-between gap-3 rounded-xl border border-input bg-card px-3.5">
           {/* A real label, so clicking the text toggles the switch too. */}
           <label id={labelId} htmlFor={name} className="flex-1 cursor-pointer text-sm font-medium">
             {label}
@@ -358,7 +358,10 @@ function SheetTextFields({
           <p className="flex items-start gap-2 rounded-xl bg-primary/5 px-3.5 py-2.5 text-sm text-foreground/80">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
             <span>
-              اترك النصوص كلها فارغة لتُعبّأ تلقائيًا من النص الرسمي لنموذج الضبط المختار.
+              يمكنك إملاء النص بصوتك بدل كتابته: اضغط زر الميكروفون أسفل الحقل وتحدّث، ثم اضغطه مرة
+              أخرى للإيقاف، فيظهر كلامك نصًا مكتوبًا. وإن ذكرت كلمة تدل على تاريخ أو وقت ظهر مكانه
+              حقل صغير لتعبئته. ويمكنك ترك النصوص كلها فارغة لتُعبّأ تلقائيًا من النص الرسمي لنموذج
+              الضبط المختار.
             </span>
           </p>
         )}
@@ -506,12 +509,7 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                   {...register('reportNumber')}
                 />
               </FormField>
-              <FormField
-                label="تاريخ الضبط"
-                htmlFor="reportDate"
-                error={errors.reportDate?.message}
-                required
-              >
+              <FormField label="تاريخ الضبط" htmlFor="reportDate" required>
                 <Controller
                   control={control}
                   name="reportDate"
@@ -524,6 +522,7 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       aria-invalid={Boolean(errors.reportDate)}
+                      error={errors.reportDate?.message}
                     />
                   )}
                 />
@@ -582,12 +581,7 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                   {...register('crimePlace')}
                 />
               </FormField>
-              <FormField
-                label="تاريخ الجرم"
-                htmlFor="crimeDate"
-                error={errors.crimeDate?.message}
-                required={hasCrimeType}
-              >
+              <FormField label="تاريخ الجرم" htmlFor="crimeDate" required={hasCrimeType}>
                 <Controller
                   control={control}
                   name="crimeDate"
@@ -600,6 +594,7 @@ export function ReportFormFields({ form, isEdit }: ReportFormFieldsProps) {
                       onChange={field.onChange}
                       onBlur={field.onBlur}
                       aria-invalid={Boolean(errors.crimeDate)}
+                      error={errors.crimeDate?.message}
                     />
                   )}
                 />

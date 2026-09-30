@@ -11,7 +11,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { EmptyState } from '@/components/shared/empty-state';
-import { ChangePasswordCard } from '@/components/profile/change-password-card';
 import { ApiError } from '@/lib/api/client';
 import { roleLabel } from '@/lib/auth/permissions';
 import type { ApiErrorBody } from '@/types/api';
@@ -36,8 +35,8 @@ const FIELDS: { name: keyof ReportInfoFormValues; label: string }[] = [
 ];
 
 /**
- * Name and email are read-only (no endpoint changes them); the report
- * info and the user's own password (PUT /users/me/password) are editable.
+ * Name and email are read-only (no endpoint changes them); the report info
+ * is editable. The password, theme and text size live on the settings page.
  */
 export function ProfilePage() {
   const { data: user, isPending, isError, refetch } = useMe();
@@ -95,7 +94,6 @@ export function ProfilePage() {
         </Card>
 
         {!isError && user && <ReportInfoCard reportInfo={user.reportInfo} />}
-        {!isError && user && <ChangePasswordCard email={user.email} />}
       </div>
     </>
   );
